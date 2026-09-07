@@ -1,0 +1,1629 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Drill</title>
+<style>
+:root{
+  --bg:#F0F1F4; --surface:#FFFFFF; --sunken:#E6E8EE;
+  --ink:#151821; --muted:#5C6273; --line:#DDE0E8; --line-str:#C7CBD8;
+  --accent:#2F4B8F; --accent-ink:#FFFFFF; --accent-soft:#E5EAF6; --accent-edge:#22386C;
+  --good:#1E7A52; --good-soft:#E1F1E9; --good-edge:#166141; --on-good:#FFFFFF;
+  --bad:#B3383C; --bad-soft:#F8E7E7; --bad-edge:#8E2B2E; --on-bad:#FFFFFF;
+  --amber:#B4741A; --amber-soft:#F7ECDA;
+  --shadow:0 1px 2px rgba(21,24,33,.06), 0 6px 16px -8px rgba(21,24,33,.14);
+  --r:14px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111319; --surface:#1A1D26; --sunken:#232732;
+  --ink:#E9EAF0; --muted:#969CAE; --line:#2A2E3A; --line-str:#3A3F4E;
+  --accent:#7E9BE8; --accent-ink:#101320; --accent-soft:#1E2537; --accent-edge:#5B78C4;
+  --good:#5CBF92; --good-soft:#152A22; --good-edge:#3F9971; --on-good:#0E1A14;
+  --bad:#E58585; --bad-soft:#2B1B1D; --bad-edge:#B96565; --on-bad:#241214;
+  --amber:#E0A84E; --amber-soft:#2A2116;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 20px -10px rgba(0,0,0,.6);
+}}
+:root[data-theme="dark"]{
+  --bg:#111319; --surface:#1A1D26; --sunken:#232732;
+  --ink:#E9EAF0; --muted:#969CAE; --line:#2A2E3A; --line-str:#3A3F4E;
+  --accent:#7E9BE8; --accent-ink:#101320; --accent-soft:#1E2537; --accent-edge:#5B78C4;
+  --good:#5CBF92; --good-soft:#152A22; --good-edge:#3F9971; --on-good:#0E1A14;
+  --bad:#E58585; --bad-soft:#2B1B1D; --bad-edge:#B96565; --on-bad:#241214;
+  --amber:#E0A84E; --amber-soft:#2A2116;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 20px -10px rgba(0,0,0,.6);
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:400 16px/1.55 "Arial","Avenir Next",-apple-system,Segoe UI,sans-serif;
+  -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+#app{max-width:540px;margin:0 auto;padding:20px 16px 120px}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px;border-radius:8px}
+
+/* type */
+.wordmark svg{color:var(--accent)}
+.wordmark{font-weight:800;font-size:23px;letter-spacing:-.02em;display:flex;align-items:center;gap:9px}
+.sec{font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);margin:30px 0 10px}
+.ttl{font-weight:700;font-size:16px;letter-spacing:-.01em;text-wrap:balance}
+.meta{font-size:13px;color:var(--muted);margin-top:3px}
+.empty{font-size:14px;color:var(--muted);background:var(--sunken);
+  border-radius:var(--r);padding:16px;text-align:center}
+
+/* cards */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:15px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px}
+.stack{display:flex;flex-direction:column;gap:10px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.grow{min-width:0;flex:1}
+
+/* the chunky pressable button - the app's one signature control */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--surface);border:2px solid var(--line-str);border-bottom-width:4px;
+  border-radius:12px;padding:11px 16px;font-weight:700;font-size:15px;white-space:nowrap;
+  transition:transform .06s,border-bottom-width .06s,box-shadow .12s}
+.btn:active{transform:translateY(2px);border-bottom-width:2px}
+.btn.pri{background:var(--accent);border-color:var(--accent-edge);color:var(--accent-ink)}
+.btn.go{background:var(--good);border-color:var(--good-edge);color:var(--on-good)}
+.btn.no{background:var(--bad);border-color:var(--bad-edge);color:var(--on-bad)}
+.btn.wide{width:100%}
+.btn:disabled{cursor:default;opacity:.55}
+.tiny{font-size:13px;font-weight:600;color:var(--muted);padding:8px 4px;border:0}
+.tiny:hover{color:var(--ink)}
+/* a secondary control that still has to read as tappable next to grey meta text */
+.pill{border:1px solid var(--line-str);border-radius:999px;padding:6px 12px;
+  font-size:12px;letter-spacing:.02em;flex:none}
+.pill:hover{color:var(--ink)}
+.pill.on{color:var(--accent);border-color:var(--accent)}
+
+/* per-question note */
+.nb{margin-top:10px}
+.nb textarea{width:100%;min-height:88px;resize:vertical;display:block;
+  font:400 15px/1.5 inherit;color:var(--ink);background:var(--surface);
+  border:2px solid var(--line-str);border-radius:12px;padding:11px 12px}
+.nb textarea:focus{outline:none;border-color:var(--accent)}
+.nb .hint{margin-top:4px}
+.notetxt{background:var(--amber-soft);border-left:3px solid var(--amber);
+  border-radius:0 8px 8px 0;padding:8px 11px;font-size:14px;white-space:pre-wrap}
+
+/* view switcher */
+.switch{display:flex;gap:2px;background:var(--sunken);border-radius:10px;padding:2px}
+.switch button{font-size:13px;font-weight:700;padding:6px 12px;border-radius:8px;color:var(--muted)}
+.switch button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+
+/* class picker */
+.pick{display:flex;align-items:center;gap:10px;background:var(--surface);
+  border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.pick span{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pick select{flex:1;font:inherit;font-weight:700;color:var(--ink);background:transparent;
+  border:0;padding:4px 2px;cursor:pointer}
+.pick select:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px;border-radius:6px}
+
+/* archived drawer */
+.arch{margin-top:26px;border-top:1px solid var(--line);padding-top:10px}
+.arch summary{cursor:pointer;list-style:none;font-size:12px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted);padding:8px 2px;display:flex;align-items:center;gap:8px}
+.arch summary::-webkit-details-marker{display:none}
+.arch summary::before{content:"";width:0;height:0;border:5px solid transparent;
+  border-left-color:currentColor;transition:transform .15s}
+.arch[open] summary::before{transform:rotate(90deg) translateX(-1px)}
+.arch summary:hover{color:var(--ink)}
+.archbody{padding-top:6px;opacity:.8}
+
+/* stat strip */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 12px}
+.stat b{display:block;font-size:24px;font-weight:800;letter-spacing:-.03em;line-height:1.15}
+/* direct child only: the label. Spans inside <b> are the count-up and the /total. */
+.stat>span{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+
+/* meters - single-hue magnitude, labelled, never color alone */
+.meter{height:7px;border-radius:99px;background:var(--sunken);overflow:hidden}
+.meter>i{display:block;height:100%;border-radius:99px;background:var(--accent);
+  transition:width .35s cubic-bezier(.4,0,.2,1)}
+.meter.warn>i{background:var(--amber)}
+
+/* chips */
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;
+  letter-spacing:.04em;text-transform:uppercase;border-radius:99px;padding:3px 9px;
+  background:var(--sunken);color:var(--muted)}
+.chip.on{background:var(--amber-soft);color:var(--amber)}
+.chip.ok{background:var(--good-soft);color:var(--good)}
+.chip.no{background:var(--bad-soft);color:var(--bad)}
+.tag{display:inline-block;font-size:11.5px;color:var(--muted);background:var(--sunken);
+  border-radius:6px;padding:2px 7px;margin:6px 6px 0 0}
+
+/* quiz */
+.topbar{position:sticky;top:0;z-index:5;background:var(--bg);padding:6px 0 14px;
+  display:flex;align-items:center;gap:12px}
+.segs{display:flex;gap:3px;flex:1}
+.segs>i{flex:1;height:6px;border-radius:99px;background:var(--sunken)}
+.segs.solid{gap:0;height:6px;border-radius:99px;background:var(--sunken);overflow:hidden;display:block}
+.segs.solid>i{height:100%;background:var(--accent);border-radius:99px;display:block;
+  transition:width .35s cubic-bezier(.4,0,.2,1)}
+.segs>i.done{background:var(--accent)}
+.segs>i.now{background:var(--accent);opacity:.45}
+.clock{font-size:13px;font-weight:700;color:var(--muted);min-width:52px;text-align:right}
+.stem{font-family:"Georgia",Georgia,serif;font-size:21px;line-height:1.4;
+  font-weight:600;letter-spacing:-.005em;text-wrap:pretty;margin:14px 0 6px}
+.hint{font-size:13px;font-weight:600;color:var(--muted);margin-bottom:12px}
+.navrow{align-items:flex-start;gap:8px;margin-top:2px}
+.navbtns{display:flex;gap:12px;flex:none}
+.navbtns .tiny{padding:2px 0;display:inline-flex;align-items:center;gap:4px}
+.dock.warn{background:var(--amber-soft);border-top-color:var(--amber)}
+.dock.warn .verdict{color:var(--amber)}
+.dock .pair{display:flex;gap:10px}
+.dock .pair .btn{flex:1}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{display:flex;align-items:flex-start;gap:11px;width:100%;text-align:left;
+  background:var(--surface);border:2px solid var(--line);border-bottom-width:4px;
+  border-radius:12px;padding:13px 14px;font-size:15px;line-height:1.4;
+  transition:transform .06s,border-bottom-width .06s,box-shadow .12s}
+.opt:not(:disabled):active{transform:translateY(2px);border-bottom-width:2px}
+.opt .key{flex:none;width:24px;height:24px;border-radius:7px;background:var(--sunken);
+  color:var(--muted);font-size:12.5px;font-weight:800;display:grid;place-items:center;margin-top:1px}
+.opt.sel{border-color:var(--accent);background:var(--accent-soft)}
+.opt.sel .key{background:var(--accent);color:var(--accent-ink)}
+.opt.good{border-color:var(--good);background:var(--good-soft)}
+.opt.good .key{background:var(--good);color:var(--on-good)}
+.opt.bad{border-color:var(--bad);background:var(--bad-soft)}
+.opt.bad .key{background:var(--bad);color:var(--on-bad)}
+.opt:disabled{cursor:default}
+
+/* figures lifted from the source material - always on white, both themes */
+.fig{margin:0 0 14px;background:#fff;border:1px solid var(--line);border-radius:10px;
+  padding:10px;overflow-x:auto}
+.fig img{display:block;width:100%;max-width:100%;border-radius:4px;cursor:zoom-in}
+.fig .zoomhint{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:#5C6273;margin-top:8px}
+.lb{position:fixed;inset:0;z-index:50;background:rgba(8,10,16,.9);display:flex;
+  flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  padding:16px;cursor:zoom-out}
+.lb img{max-width:100%;max-height:88vh;background:#fff;border-radius:8px;padding:10px}
+.lb .hint{color:#fff;font-size:12px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;opacity:.7}
+.fig figcaption{font-size:12px;color:#5C6273;margin-top:8px;font-weight:600}
+.opt .fig,.note .fig{margin-bottom:0}
+
+/* teaching card - shown between clusters of questions */
+.note{background:var(--accent-soft);border:1px solid var(--accent);border-radius:var(--r);
+  padding:16px;margin:14px 0}
+.note h3{font-family:"Georgia",Georgia,serif;font-size:20px;font-weight:600;
+  letter-spacing:-.01em;margin:0 0 8px;text-wrap:balance}
+.note p{font-family:"Georgia",Georgia,serif;font-size:16px;line-height:1.55;margin:0 0 10px}
+.note p:last-child{margin-bottom:0}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:8px}
+
+/* matching game */
+.matchgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.matchgrid .col{display:flex;flex-direction:column;gap:8px}
+.tile{text-align:left;background:var(--surface);border:2px solid var(--line);border-bottom-width:4px;
+  border-radius:11px;padding:11px 12px;font-size:14px;line-height:1.35;font-weight:600;
+  transition:transform .06s,border-bottom-width .06s,opacity .2s}
+.tile:not(:disabled):active{transform:translateY(2px);border-bottom-width:2px}
+.tile.on{border-color:var(--accent);background:var(--accent-soft)}
+.tile.matched{border-color:var(--good);background:var(--good-soft);opacity:.55;cursor:default}
+.tile.miss{border-color:var(--bad);background:var(--bad-soft);animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+/* ordering */
+.chosen{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:8px}
+.chosen li button{display:flex;align-items:center;gap:11px;width:100%;text-align:left;
+  background:var(--accent-soft);border:2px solid var(--accent);border-radius:11px;
+  padding:11px 13px;font-size:15px;line-height:1.35}
+.chosen li.good button{background:var(--good-soft);border-color:var(--good)}
+.chosen li.bad button{background:var(--bad-soft);border-color:var(--bad)}
+.chosen .num{flex:none;width:22px;height:22px;border-radius:6px;background:var(--accent);
+  color:var(--accent-ink);font-size:12px;font-weight:800;display:grid;place-items:center}
+.chosen li.good .num{background:var(--good);color:var(--on-good)}
+.chosen li.bad .num{background:var(--bad);color:var(--on-bad)}
+
+/* bottom action dock + feedback sheet */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--surface);
+  border-top:1px solid var(--line);padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+  animation:rise .22s cubic-bezier(.2,.8,.3,1)}
+.dock .inner{max-width:540px;margin:0 auto;display:flex;flex-direction:column;gap:11px}
+.dock.ok{background:var(--good-soft);border-top-color:var(--good)}
+.dock.no{background:var(--bad-soft);border-top-color:var(--bad)}
+.verdict{display:flex;align-items:center;gap:9px;font-weight:800;font-size:16px}
+.dock.ok .verdict{color:var(--good)} .dock.no .verdict{color:var(--bad)}
+.why{font-family:"Georgia",Georgia,serif;font-size:15px;line-height:1.5;color:var(--muted)}
+.why.sm{font-size:13.5px}
+/* the one sentence worth carrying out of the card */
+.keeper{font-size:16.5px;font-weight:700;line-height:1.4;letter-spacing:-.011em;color:var(--ink);
+  text-wrap:balance}
+.keeper.sm{font-size:15px}
+.keeper+.why{margin-top:5px}
+.dock .keeper{animation:inUp .22s cubic-bezier(.22,.9,.3,1) backwards;animation-delay:.09s}
+.dock .why{animation:inUp .26s cubic-bezier(.22,.9,.3,1) backwards;animation-delay:.13s}
+@keyframes rise{from{transform:translateY(100%)}to{transform:translateY(0)}}
+
+/* results */
+.score{display:flex;align-items:center;gap:18px;margin:18px 0 6px}
+.score b{font-size:44px;font-weight:800;letter-spacing:-.035em;line-height:1}
+.ring{flex:none}
+.rev{border-left:3px solid var(--line);padding-left:13px}
+.rev.ok{border-color:var(--good)} .rev.no{border-color:var(--bad)}
+
+/* motion: short, directional, and never in the way */
+@keyframes inL{from{opacity:0;transform:translate3d(16px,0,0)}to{opacity:1;transform:none}}
+@keyframes inR{from{opacity:0;transform:translate3d(-16px,0,0)}to{opacity:1;transform:none}}
+@keyframes inUp{from{opacity:0;transform:translate3d(0,8px,0)}to{opacity:1;transform:none}}
+#app.in-l{animation:inL .17s cubic-bezier(.22,.9,.3,1)}
+#app.in-r{animation:inR .17s cubic-bezier(.22,.9,.3,1)}
+#app.in-up{animation:inUp .19s cubic-bezier(.22,.9,.3,1)}
+
+@keyframes pop{0%{transform:scale(1)}45%{transform:scale(1.022)}100%{transform:scale(1)}}
+.opt.good{animation:pop .26s cubic-bezier(.3,1.4,.5,1)}
+.opt.bad{animation:shake .28s}
+.tile.matched{animation:pop .24s cubic-bezier(.3,1.4,.5,1)}
+.chosen li button{animation:inUp .16s cubic-bezier(.22,.9,.3,1)}
+
+@keyframes fadeIn{from{opacity:0;transform:translate3d(0,6px,0)}to{opacity:1;transform:none}}
+.stack>.card{animation:fadeIn .22s cubic-bezier(.22,.9,.3,1) backwards}
+.stack>.card:nth-child(2){animation-delay:.03s}
+.stack>.card:nth-child(3){animation-delay:.06s}
+.stack>.card:nth-child(4){animation-delay:.09s}
+.stack>.card:nth-child(n+5){animation-delay:.11s}
+.stats>.stat{animation:fadeIn .22s cubic-bezier(.22,.9,.3,1) backwards}
+.stats>.stat:nth-child(2){animation-delay:.04s}
+.stats>.stat:nth-child(3){animation-delay:.08s}
+
+.ring circle:last-child{transition:stroke-dashoffset .6s cubic-bezier(.22,.9,.3,1)}
+.tiny.nav{padding:4px 6px;border-radius:8px}
+.tiny.nav:disabled{opacity:.3;cursor:default}
+.tiny.nav:not(:disabled):active{transform:scale(.9)}
+.tiny{transition:transform .08s}
+.card{transition:box-shadow .15s}
+.switch button{transition:transform .1s}
+#app{touch-action:pan-y}
+
+/* ── refinements ──────────────────────────────────────────────────────────── */
+/* Only transform/opacity/shadow/outline are ever transitioned. A themed colour in a
+   transition list freezes one theme behind — see HANDOFF section 6. */
+.card{transition:box-shadow .18s cubic-bezier(.22,.9,.3,1),transform .18s cubic-bezier(.22,.9,.3,1)}
+.card:has(.btn:hover),.card:has([role=button]):hover{transform:translateY(-1px);
+  box-shadow:0 2px 4px rgba(21,24,33,.07),0 12px 26px -12px rgba(21,24,33,.2)}
+.btn:not(:disabled):hover{transform:translateY(-1px)}
+.btn:not(:disabled):active{transform:translateY(2px)}
+.opt:not(:disabled):hover{transform:translateY(-1px)}
+.tile:not(:disabled):hover{transform:translateY(-1px)}
+.key.sm{width:19px;height:19px;font-size:11px;margin-right:8px;display:inline-flex;
+  align-items:center;justify-content:center;vertical-align:1px}
+.kbhint{margin-top:12px;font-size:12px;color:var(--muted);letter-spacing:.01em}
+.kbhint b{font-weight:700;color:var(--ink);background:var(--sunken);
+  border-radius:5px;padding:1px 6px;font-size:11px}
+@media (pointer:coarse){.kbhint{display:none}}
+.pill{transition:transform .12s cubic-bezier(.3,1.4,.5,1)}
+.pill:hover{transform:scale(1.05)}
+.pill:active{transform:scale(.94)}
+
+/* press ripple — a transform, so it is theme-safe */
+.btn,.opt,.tile{position:relative;overflow:hidden;isolation:isolate}
+.btn::after,.opt::after,.tile::after{content:"";position:absolute;inset:0;z-index:-1;
+  background:currentColor;opacity:0;transform:scale(.6);border-radius:inherit;pointer-events:none}
+.btn:active::after,.opt:not(:disabled):active::after,.tile:not(:disabled):active::after{
+  opacity:.07;transform:scale(1);transition:transform .35s cubic-bezier(.22,.9,.3,1),opacity .12s}
+
+/* a visible keyboard path, without touching the mouse experience */
+:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px;border-radius:6px}
+:focus:not(:focus-visible){outline:none}
+
+/* the verdict in the dock lands rather than appears */
+.dock .verdict{animation:inUp .22s cubic-bezier(.22,.9,.3,1) backwards;animation-delay:.04s}
+.dock .why{animation:inUp .26s cubic-bezier(.22,.9,.3,1) backwards;animation-delay:.09s}
+.segs.solid>i{transition:width .45s cubic-bezier(.22,.9,.3,1)}
+.wordmark svg{transition:transform .5s cubic-bezier(.22,.9,.3,1)}
+.wordmark.spin svg{transform:rotate(360deg) scale(1.12)}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:26px;z-index:60;transform:translateX(-50%);
+  background:var(--ink);color:var(--bg);font-weight:700;font-size:14px;
+  padding:11px 18px;border-radius:999px;box-shadow:var(--shadow);pointer-events:none;
+  animation:toastIn .3s cubic-bezier(.22,.9,.3,1)}
+.toast.out{animation:toastOut .3s cubic-bezier(.4,0,1,1) forwards}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(14px) scale(.94)}
+  to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
+@keyframes toastOut{to{opacity:0;transform:translateX(-50%) translateY(10px) scale(.96)}}
+
+/* confetti */
+.confetti{position:fixed;inset:0;z-index:55;pointer-events:none;overflow:hidden}
+.confetti i{position:absolute;width:9px;height:15px;border-radius:2px;will-change:transform,opacity;
+  animation:fall var(--d) cubic-bezier(.2,.6,.5,1) forwards}
+@keyframes fall{
+  0%{opacity:1;transform:translate3d(0,0,0) rotate(0)}
+  100%{opacity:0;transform:translate3d(var(--x),var(--y),0) rotate(var(--r))}}
+
+/* someone who asked for less motion gets less motion */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important}
+  .confetti{display:none}
+}
+
+/* A transitioned property whose value comes from a var() gets stuck one theme behind
+   when the theme changes, so freeze transitions for a moment while the swap happens. */
+html.swap *{transition:none!important}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* tap-to-reveal inside a teaching card: predict, then look */
+.rv{margin-top:14px;padding-top:13px;border-top:1px dashed var(--accent)}
+.rvq{font-size:14px;font-weight:700;letter-spacing:-.005em;margin-bottom:9px}
+.rva{font-family:"Georgia",Georgia,serif;font-size:16px;line-height:1.55;
+  background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 13px;
+  animation:inUp .24s cubic-bezier(.22,.9,.3,1)}
+
+/* version stack + overlap notice on a test card */
+.vers{border-top:1px solid var(--line);padding-top:10px;margin-top:2px}
+.verrow{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:8px 0;border-bottom:1px solid var(--line)}
+.verrow:last-child{border-bottom:0}
+.note-line{font-size:13px;color:var(--amber);background:var(--amber-soft);
+  border-radius:8px;padding:7px 10px;margin-top:2px}
+.src-line{font-size:12.5px;color:var(--muted);margin-top:2px}
+</style>
+</head><body>
+<div id="app"></div>
+<div id="dockhost"></div>
+<script src="runtime.js"></script>
+<script>
+// ── TESTS: appended by the `drill` skill from structured lesson JSON. Do not edit by hand. ──
+// {id, title, course, unit, questions:[{q, options[], correct: idx | [idx,...], why, tags[]}]}
+const IMG={};
+const TESTS = [
+  {
+    "id": "demo-parcel-flow",
+    "title": "Parcel flow at Cedar Workshop",
+    "course": "Fictional Operations",
+    "unit": "Order basics",
+    "created": "2026-09-07T12:00:00Z",
+    "about": "Learn a fictional three-step parcel process, then practice it.",
+    "questions": [
+      {
+        "eyebrow": "Start here",
+        "title": "Three stages, one parcel",
+        "body": "Cedar Workshop is fictional. Its parcel process has three stages: Receive, Pack, Dispatch.\nReceive records the order. Pack protects the item. Dispatch hands the parcel to a courier.",
+        "ask": "Which stage protects the item?",
+        "reveal": "Pack protects the item."
+      },
+      {
+        "q": "Which stage protects the item?",
+        "options": [
+          "Receive",
+          "Pack",
+          "Dispatch"
+        ],
+        "correct": 1,
+        "why": "Pack protects the item before dispatch.",
+        "tags": [
+          "workflow"
+        ]
+      },
+      {
+        "q": "Select both actions completed before Dispatch.",
+        "options": [
+          "Receive the order",
+          "Hand it to a courier",
+          "Pack the item"
+        ],
+        "correct": [
+          0,
+          2
+        ],
+        "why": "Receive and Pack both happen before Dispatch.",
+        "tags": [
+          "workflow"
+        ]
+      },
+      {
+        "type": "match",
+        "q": "Match each stage to its action.",
+        "pairs": [
+          [
+            "Receive",
+            "Record the order"
+          ],
+          [
+            "Pack",
+            "Protect the item"
+          ],
+          [
+            "Dispatch",
+            "Hand to courier"
+          ]
+        ],
+        "why": "Each stage has a distinct action.",
+        "tags": [
+          "workflow"
+        ]
+      },
+      {
+        "type": "order",
+        "q": "Put the stages in their working order.",
+        "items": [
+          "Receive",
+          "Pack",
+          "Dispatch"
+        ],
+        "why": "Receive comes first, followed by Pack and Dispatch.",
+        "tags": [
+          "workflow"
+        ]
+      }
+    ]
+  }
+];
+
+const INTERVALS=[1,3,7,21,60];               // Leitner box -> days until due
+const MASTERED=2;                            // box at which a question counts as known
+const REVIEW_MAX=15;
+const DAY=864e5;
+const LETTERS=["A","B","C","D","E","F"];
+
+let db=null, view={s:"home"}, tick=null, tStart=0;
+let attempts=[], live=null, sched={}, flags=[], archived=[];  // live = the attempt being taken
+let browseCourse="All", archOpen=false, askRestart=false, navDir=0;  // survive re-renders
+let askDrop=null;                            // id of the unfinished run awaiting a discard confirm
+let versOpen={}, revealed={};          // testId -> earlier versions shown; ref -> teaching card revealed
+let carried=[];                        // ids of tests whose progress has already been carried forward
+let notes={}, noteOpen=null;                 // notes["<testId>:<cardIndex>"] = free text; noteOpen = the ref being edited
+const el=document.getElementById("app");
+const dockHost=document.getElementById("dockhost");
+
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const key=(tid,i)=>tid+":"+i;
+const now=()=>Date.now();
+const test=id=>TESTS.find(t=>t.id===id);
+const qOf=r=>test(r[0])?.questions[r[1]];
+const kind=q=>q.type||(q.options?"mc":"note");      // mc | multi | match | order | note
+const isMulti=q=>Array.isArray(q.correct);
+const isNote=q=>!!q&&kind(q)==="note";              // a teaching card, not a question
+const scorable=a=>a.refs.filter(r=>{const q=qOf(r); return q&&!isNote(q);}).length;
+function right(q,a){
+  if(a==null) return false;
+  const k=kind(q);
+  if(k==="match") return a.done===true&&a.misses===0;
+  if(k==="order") return Array.isArray(a)&&a.length===q.items.length&&a.every((v,i)=>v===i);
+  if(isMulti(q)) return a.length===q.correct.length&&q.correct.every(v=>a.includes(v));
+  return a===q.correct;
+}
+
+// a stable shuffle, so the tiles do not jump around between renders
+function shuffled(n,seed){
+  const idx=[...Array(n).keys()]; let s=seed>>>0||1;
+  const rnd=()=>{ s=(s*1103515245+12345)&0x7fffffff; return s/0x7fffffff; };
+  for(let i=n-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [idx[i],idx[j]]=[idx[j],idx[i]]; }
+  return idx;
+}
+const seedOf=str=>{ let h=0; for(const c of str) h=(h*31+c.charCodeAt(0))|0; return Math.abs(h)+1; };
+const scoreOf=a=>a.refs.reduce((n,r,i)=>{const q=qOf(r);
+  return n+(q&&!isNote(q)&&right(q,a.answers[i])?1:0);},0);
+const mins=ms=>Math.floor(ms/6e4)+":"+String(Math.floor(ms%6e4/1000)).padStart(2,"0");  // running clock
+const dur=ms=>{ const m=Math.floor(ms/6e4), s=Math.floor(ms%6e4/1000);
+  return m?m+"m "+s+"s":s+"s"; };
+const fmt=ts=>new Date(ts).toLocaleDateString(undefined,{month:"short",day:"numeric"});
+const madeAt=t=>t.created?Date.parse(t.created):0;
+function fmtWhen(ts){
+  if(!ts) return "date unknown";
+  const d=new Date(ts), clock=d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"});
+  const today=new Date().toDateString(), yday=new Date(Date.now()-DAY).toDateString();
+  const day=d.toDateString()===today?"Today"
+    :d.toDateString()===yday?"Yesterday"
+    :d.toLocaleDateString(undefined,{month:"short",day:"numeric"});
+  return day+" at "+clock;
+}
+const pct=(a,b)=>b?Math.round(a/b*100):0;
+
+// icons
+const ICON={
+  check:'<svg width="17" height="17" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10.5l4 4 8-9" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  x:'<svg width="17" height="17" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>',
+  flag:'<svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 17V4h9l-1.6 3L14 10H5" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>',
+  fwd:'<svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M8 4l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  back:'<svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M12 4l-6 6 6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  close:'<svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
+  redo:'<svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10a6 6 0 1 1 1.8 4.3M4 6.2V10h3.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  note:'<svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true" style="vertical-align:-2px;margin-right:5px"><path d="M13.4 3.6l3 3L7.8 15.2 4 16l.8-3.8 8.6-8.6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+  mark:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2.5" y="3.5" width="19" height="17" rx="4.5" stroke="currentColor" stroke-width="2"/><path d="M7 9.5h6M7 14h9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
+};
+
+// ── persistence ────────────────────────────────────────────────────────────────
+const put=(p,v)=>{ try{ return db?.doc(p).set(v); }catch(e){} };
+const del=p=>{ try{ return db?.doc(p).delete(); }catch(e){} };
+const saveLive=()=>live&&put("attempts/"+live.id,live);
+const saveSched=()=>put("state/sched",{q:sched});
+const saveFlags=()=>put("state/flags",{list:flags});
+const saveNotes=()=>put("state/notes",{map:notes});
+const saveArch=()=>put("state/archive",{list:archived});
+const saveCarried=()=>put("state/carried",{list:carried});
+const syncElapsed=()=>{ if(live&&view.s==="quiz"&&tStart){ live.elapsed+=now()-tStart; tStart=now(); } };
+
+// ── scheduling & stats ─────────────────────────────────────────────────────────
+function grade(r,ok){
+  const k=key(r[0],r[1]), s=sched[k]||{box:0,due:0};
+  s.box = ok ? Math.min(s.box+1,INTERVALS.length-1) : 0;
+  s.due = now() + (ok ? INTERVALS[s.box]*DAY : 0);
+  sched[k]=s;
+}
+function dueRefs(){
+  const out=[];
+  activeTests().forEach(t=>t.questions.forEach((q,i)=>{
+    const s=sched[key(t.id,i)];
+    if(s && s.due<=now() && !isNote(q)) out.push({r:[t.id,i],box:s.box,due:s.due});
+  }));
+  out.sort((a,b)=>a.box-b.box||a.due-b.due);
+  return out.slice(0,REVIEW_MAX).map(x=>x.r);
+}
+const isArch=id=>archived.includes(id);
+
+// ── versions ───────────────────────────────────────────────────────────────────
+// A newer test declares `supersedes:"<olderId>"`. The older one keeps its id, its cards
+// and every answer ever recorded against it — it just stops counting toward stats and
+// the review schedule, and moves under the newer one in the lists. Nothing is deleted.
+const SUPERSEDED=new Set(TESTS.map(t=>t.supersedes).filter(Boolean));
+const isOld=id=>SUPERSEDED.has(id);
+function chainOf(t){                    // oldest .. newest, ending at t
+  const out=[t], seen=new Set([t.id]);
+  let cur=t;
+  while(cur&&cur.supersedes&&!seen.has(cur.supersedes)){
+    const p=test(cur.supersedes); if(!p) break;
+    seen.add(p.id); out.unshift(p); cur=p;
+  }
+  return out;
+}
+const activeTests=()=>TESTS.filter(t=>!isArch(t.id)&&!isOld(t.id));
+
+// ── overlap ────────────────────────────────────────────────────────────────────
+// Two tests in the same class that ask the same question. Exact stems only, so this
+// under-reports rather than crying wolf — a reworded duplicate slips through, and that
+// is the right way round for a notice you are meant to trust.
+const stemOf=q=>String(q.q||"").toLowerCase().replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+let _ovl=null;
+function overlaps(){
+  if(_ovl) return _ovl;
+  const m={}, heads=TESTS.filter(t=>!isOld(t.id));
+  const sets=heads.map(t=>({t, s:new Set(t.questions.filter(q=>!isNote(q)).map(stemOf).filter(Boolean))}));
+  for(let i=0;i<sets.length;i++) for(let j=i+1;j<sets.length;j++){
+    const A=sets[i], B=sets[j];
+    if(A.t.course!==B.t.course) continue;
+    let n=0; A.s.forEach(x=>{ if(B.s.has(x)) n++; });
+    if(n>=2){
+      (m[A.t.id]=m[A.t.id]||[]).push({title:B.t.title,n});
+      (m[B.t.id]=m[B.t.id]||[]).push({title:A.t.title,n});
+    }
+  }
+  return _ovl=m;
+}
+// Progress follows a question across versions. `carry:{newIndex:oldIndex}` says which cards
+// are the same question as before; their box, due date, note and flag come across once.
+// Recorded in state/carried so a note you deleted on purpose does not reappear next boot.
+function carryForward(){
+  let dS=false,dN=false,dF=false,dC=false;
+  TESTS.forEach(t=>{
+    if(!t.carry||!t.supersedes||carried.includes(t.id)) return;
+    for(const [ni,pi] of Object.entries(t.carry)){
+      const nk=key(t.id,+ni), pk=key(t.supersedes,+pi);
+      if(!sched[nk]&&sched[pk]){ sched[nk]={...sched[pk]}; dS=true; }
+      if(!notes[nk]&&notes[pk]){ notes[nk]=notes[pk]; dN=true; }
+      if(!flags.includes(nk)&&flags.includes(pk)){ flags.push(nk); dF=true; }
+    }
+    carried.push(t.id); dC=true;
+  });
+  if(dS) saveSched(); if(dN) saveNotes(); if(dF) saveFlags(); if(dC) saveCarried();
+}
+const asks=t=>t.questions.filter(q=>!isNote(q)).length;
+const masteredIn=t=>t.questions.filter((q,i)=>!isNote(q)&&(sched[key(t.id,i)]?.box||0)>=MASTERED).length;
+function overall(){
+  const done=rows().filter(a=>a.done);
+  const asked=done.reduce((n,a)=>n+scorable(a),0);
+  const got=done.reduce((n,a)=>n+scoreOf(a),0);
+  const qs=activeTests().reduce((n,t)=>n+asks(t),0);
+  const kn=activeTests().reduce((n,t)=>n+masteredIn(t),0);
+  return {asked,got,qs,kn,acc:pct(got,asked)};
+}
+function tagStats(){
+  const m={};
+  rows().filter(a=>a.done).forEach(a=>a.refs.forEach((r,i)=>{
+    const q=qOf(r); if(!q||isNote(q)||isArch(r[0])) return;
+    (q.tags||[]).forEach(tg=>{
+      m[tg]=m[tg]||{n:0,bad:0};
+      m[tg].n++; if(!right(q,a.answers[i])) m[tg].bad++;
+    });
+  }));
+  return Object.entries(m).filter(([,v])=>v.bad).sort((a,b)=>b[1].bad/b[1].n-a[1].bad/a[1].n).slice(0,5);
+}
+
+// Records written by earlier versions of this app are missing fields the screens read.
+// Repair what can be repaired, drop what cannot, and never let one bad row break a screen.
+const usable=a=>!!a&&Array.isArray(a.refs)&&Array.isArray(a.answers);
+const rows=()=>attempts.filter(usable);      // no single bad record may break a screen
+
+function normalize(a){
+  if(!a||typeof a!=="object") return null;
+  if(!Array.isArray(a.refs)||!a.refs.length) return null;
+  if(!a.refs.every(r=>Array.isArray(r)&&r.length===2)) return null;
+  if(!a.refs.some(r=>test(r[0]))) return null;      // its test no longer exists
+  const n=a.refs.length;
+  a.answers=Array.isArray(a.answers)&&a.answers.length===n?a.answers:a.refs.map(()=>null);
+  a.checked=Array.isArray(a.checked)&&a.checked.length===n?a.checked:a.refs.map(()=>false);
+  a.i=Number.isInteger(a.i)&&a.i>=0&&a.i<n?a.i:0;
+  a.max=Number.isInteger(a.max)&&a.max>=a.i&&a.max<n?a.max:a.i;
+  a.elapsed=Number.isFinite(a.elapsed)?a.elapsed:0;
+  a.startedAt=Number.isFinite(a.startedAt)?a.startedAt:0;
+  a.done=!!a.done;
+  if(a.done&&!Number.isFinite(a.finishedAt)) a.finishedAt=a.startedAt;
+  a.title=typeof a.title==="string"&&a.title?a.title
+    :(test(a.testId)?.title||test(a.refs[0][0])?.title||"Untitled session");
+  a.mode=a.mode==="exam"?"exam":"practice";
+  a.id=typeof a.id==="string"&&a.id?a.id:(a.testId||"mix")+"-"+(a.startedAt||0);
+  return a;
+}
+
+// ── starting attempts ──────────────────────────────────────────────────────────
+function start(title,refs,mode,testId){
+  if(!refs.length) return;
+  const stale=rows().find(a=>!a.done&&(a.testId||a.title)===(testId||title));
+  if(stale){ attempts.splice(attempts.indexOf(stale),1); del("attempts/"+stale.id); }
+  live={id:(testId||"mix")+"-"+now(), testId:testId||null, title, mode, refs,
+        answers:refs.map(()=>null), checked:refs.map(()=>false), i:0, max:0, done:false,
+        startedAt:now(), elapsed:0};
+  attempts.unshift(live);
+  view={s:"quiz"}; render(); saveLive();
+}
+const refsOf=t=>t.questions.map((_,i)=>[t.id,i]);
+
+// ── screens ────────────────────────────────────────────────────────────────────
+const progress=(i,n)=> n>12
+  ? '<div class="segs solid"><i style="width:'+pct(i,n)+'%"></i></div>'
+  : '<div class="segs">'+Array.from({length:n},(_,k)=>
+      '<i class="'+(k<i?"done":k===i?"now":"")+'"></i>').join("")+'</div>';
+const figure=q=>q.img
+  ? '<figure class="fig"><img src="'+esc(q.img)+'" alt="'+esc(q.alt||"Lesson illustration")+'">'
+    +'<div class="zoomhint">Tap the figure to enlarge</div>'
+    +(q.caption?'<figcaption>'+esc(q.caption)+'</figcaption>':'')+'</figure>'
+  : '';
+const meter=(v,n,cls)=>'<div class="meter'+(cls?" "+cls:"")+'"><i style="width:'+pct(v,n)+'%"></i></div>';
+
+const byNew=list=>[...list].sort((x,y)=>madeAt(y)-madeAt(x));
+
+function testCard(t,newest){
+  const last=rows().find(a=>a.done&&a.testId===t.id), n=asks(t), kn=masteredIn(t);
+  const cards=t.questions.length-n, arch=isArch(t.id);
+  return '<div class="card" data-test="'+esc(t.id)+'">'
+    +'<div class="row"><div class="grow">'
+    +'<span class="chip">'+esc(t.course)+'</span>'
+    +(t.id===newest?'<span class="chip on">Newest</span>':'')
+    +(chainOf(t).length>1?'<span class="chip">v'+chainOf(t).length+'</span>':'')
+    +'<div class="ttl" style="margin-top:7px">'+esc(t.title)+'</div>'
+    +'<div class="meta">Added '+fmtWhen(madeAt(t))+'</div>'
+    +'</div><button class="btn" data-test="'+esc(t.id)+'">Open</button></div>'
+    +(t.about?'<div class="meta" style="margin-top:0">'+esc(t.about)+'</div>':'')
+    +sourceLine(t)
+    +overlapLine(t)
+    +meter(kn,n)
+    +'<div class="row"><div class="meta">'+n+' questions'
+      +(cards?' · '+cards+' card'+(cards>1?'s':''):'')+' · '+kn+' known · '
+      +(last?'last score '+scoreOf(last)+'/'+scorable(last):'not taken yet')+'</div>'
+    +'<button class="tiny pill" data-'+(arch?'unarch':'arch')+'="'+esc(t.id)+'">'
+      +(arch?'Restore':'Archive')+'</button></div>'
+    +versionBlock(t)+'</div>';
+}
+
+// where the questions came from, so the next test knows where this one stopped
+const sourceLine=t=>t.source
+  ? '<div class="src-line">From '+esc(t.source.name||"course material")
+    +(t.source.through?' · through '+esc(t.source.through):'')
+    +(t.source.remaining?' · not yet covered: '+esc(t.source.remaining):'')+'</div>'
+  : '';
+
+const overlapLine=t=>{
+  const o=overlaps()[t.id];
+  if(!o||!o.length) return '';
+  const one=o[0];
+  return '<div class="note-line">Shares '+one.n+' question'+(one.n>1?'s':'')+' with '+esc(one.title)
+    +(o.length>1?' and '+(o.length-1)+' other'+(o.length>2?'s':''):'')+'.</div>';
+};
+
+// the stack: newest on top, earlier versions folded underneath and still openable
+function versionBlock(t){
+  const chain=chainOf(t);
+  if(chain.length<2) return '';
+  const older=chain.slice(0,-1).reverse(), open=!!versOpen[t.id];
+  return '<div class="vers">'
+    +'<button class="tiny pill'+(open?' on':'')+'" data-vers="'+esc(t.id)+'">'
+      +(open?'Hide':'Show')+' '+older.length+' earlier version'+(older.length>1?'s':'')+'</button>'
+    +(open?older.map((p,k)=>'<div class="verrow"><div class="grow">'
+        +'<div class="meta"><b>v'+(chain.length-1-k)+'</b> · '+esc(p.title)+'</div>'
+        +'<div class="meta">Added '+fmtWhen(madeAt(p))+' · '+asks(p)+' questions</div></div>'
+        +'<button class="tiny pill" data-test="'+esc(p.id)+'">Open</button></div>').join("")
+      :'')
+    +'</div>';
+}
+
+function testList(list,emptyMsg,stampNewest){
+  const ordered=byNew(list);
+  const newest=stampNewest&&ordered.length&&madeAt(ordered[0])?ordered[0].id:null;
+  return ordered.length
+    ? '<div class="stack">'+ordered.map(t=>testCard(t,newest)).join("")+'</div>'
+    : '<div class="empty">'+esc(emptyMsg||"No tests here yet.")+'</div>';
+}
+
+function archiveBlock(){
+  const list=TESTS.filter(t=>isArch(t.id));
+  if(!list.length) return '';
+  return '<details class="arch"'+(archOpen?' open':'')+'><summary data-arch-toggle="1">Archived · '
+    +list.length+' test'+(list.length>1?'s':'')+'</summary><div class="archbody">'
+    +testList(list)+'</div></details>';
+}
+
+function switcher(active){
+  return '<div class="switch">'
+    +'<button data-view="home"'+(active==="home"?' class="on"':'')+'>Today</button>'
+    +'<button data-view="browse"'+(active==="browse"?' class="on"':'')+'>Browse</button></div>';
+}
+
+function browse(){
+  const list=activeTests();
+  // classes come from every test, archived included, so archiving the last one
+  // in a class does not silently reset the picker
+  const courses=[...new Set(TESTS.map(t=>t.course))].sort();
+  if(browseCourse!=="All"&&!courses.includes(browseCourse)) browseCourse="All";
+  const shown=browseCourse==="All"?list:list.filter(t=>t.course===browseCourse);
+  el.innerHTML='<div class="row"><button class="wordmark" data-mark="1" aria-label="Drill">'+ICON.mark+'Drill</button>'+switcher("browse")+'</div>'
+    +'<div class="sec">Browse by class</div>'
+    +'<label class="pick"><span>Class</span><select data-course>'
+    +['All'].concat(courses).map(c=>'<option value="'+esc(c)+'"'
+        +(c===browseCourse?' selected':'')+'>'+esc(c==="All"?"All classes":c)+'</option>').join("")
+    +'</select></label>'
+    +'<div class="meta" style="margin:12px 0 10px">'+shown.length+' test'+(shown.length===1?'':'s')
+      +' · newest first</div>'
+    +testList(shown, browseCourse==="All"
+        ? (archived.length?"Every test is archived. Open the drawer below to bring one back."
+                          :"No tests yet. Add a lesson using the documented JSON example.")
+        : "Nothing active for "+browseCourse+" right now.", true)
+    +archiveBlock();
+}
+
+function home(){
+  // an in-progress run on an archived test is hidden, not dropped; restoring brings it back
+  const due=dueRefs(), open=rows().filter(a=>!a.done&&!isArch(a.testId)), weak=tagStats();
+  const doneAtts=rows().filter(a=>a.done), o=overall();
+
+  let h='<div class="row"><button class="wordmark" data-mark="1" aria-label="Drill">'+ICON.mark+'Drill</button>'+switcher("home")+'</div>'
+    +'<div class="stats">'
+    +'<div class="stat"><b'+(due.length?' style="color:var(--accent)"':'')+'>'
+      +'<span data-count="'+due.length+'">0</span></b><span>Due now</span></div>'
+    +'<div class="stat"><b><span data-count="'+o.kn+'">0</span>'
+      +'<span style="font-size:14px;font-weight:600;color:var(--muted)">/'+o.qs+'</span></b><span>Known</span></div>'
+    +'<div class="stat"><b>'+(o.asked?'<span data-count="'+o.acc+'">0</span>%':'—')+'</b><span>Accuracy</span></div>'
+    +'</div>';
+
+  if(open.length) h+='<div class="sec">Pick up where you left off</div><div class="stack">'
+    +open.map(a=>askDrop===a.id
+      ? '<div class="card"><div class="row"><div class="grow">'
+        +'<div class="ttl">'+esc(a.title)+'</div>'
+        +'<div class="meta">Discard this run? Nothing you have finished is affected.</div></div></div>'
+        +'<div class="row"><button class="btn no grow" data-drop-do="'+esc(a.id)+'">Discard</button>'
+        +'<button class="btn grow" data-drop-cancel="1">Keep it</button></div></div>'
+      : '<div class="card"><div class="row"><div class="grow">'
+        +'<div class="ttl">'+esc(a.title)+'</div>'
+        +'<div class="meta">Question '+(a.i+1)+' of '+a.refs.length+'</div></div>'
+        +'<button class="btn pri" data-resume="'+esc(a.id)+'">Resume</button></div>'
+        +progress(a.i,a.refs.length)
+        +'<div class="row" style="justify-content:flex-end">'
+        +'<button class="tiny pill" data-drop-ask="'+esc(a.id)+'">Discard</button></div>'
+      +'</div>').join("")+'</div>';
+
+  h+='<div class="sec">Due today</div>'+(due.length
+    ? '<div class="card"><div class="row"><div class="grow"><div class="ttl">'
+      +due.length+' question'+(due.length>1?"s":"")+' to review</div>'
+      +'<div class="meta">Missed or scheduled to come back around</div></div>'
+      +'<button class="btn pri" data-review="1">Review</button></div></div>'
+    : '<div class="empty">Nothing due. Finish a test and misses will come back here on a schedule.</div>');
+
+  h+='<div class="sec">Tests · newest first</div>'
+    +testList(activeTests(), archived.length
+      ? "Every test is archived. Open the drawer below to bring one back."
+      : "No tests yet. Add a lesson using the documented JSON example.", true)
+    +archiveBlock();
+
+  if(weak.length) h+='<div class="sec">Weak spots</div><div class="stack">'+weak.map(([tg,v])=>
+    '<div class="card"><div class="row"><div class="grow"><div class="ttl">'+esc(tg)+'</div>'
+    +'<div class="meta">'+pct(v.n-v.bad,v.n)+'% right · missed '+v.bad+' of '+v.n+'</div></div>'
+    +'<button class="btn" data-tag="'+esc(tg)+'">Drill</button></div>'
+    +meter(v.n-v.bad,v.n,"warn")+'</div>').join("")+'</div>';
+
+  h+='<div class="sec">Attempt log</div>'+(doneAtts.length
+    ? '<div class="stack">'+doneAtts.slice(0,20).map(a=>{
+        const sc=scoreOf(a), p=pct(sc,scorable(a));
+        return '<div class="card" data-att="'+esc(a.id)+'" role="button" tabindex="0">'
+          +'<div class="row"><div class="grow"><div class="ttl">'+esc(a.title)+'</div>'
+          +'<div class="meta">'+fmt(a.finishedAt)+' · '+dur(a.elapsed)
+          +(a.mode==="exam"?' · exam':'')+'</div></div>'
+          +'<span class="chip '+(p>=70?"ok":"no")+'">'+sc+'/'+scorable(a)+'</span></div></div>';
+      }).join("")+'</div>'
+    : '<div class="empty">No completed attempts yet.</div>');
+
+  const noted=noteRefs();
+  if(noted.length) h+='<div class="sec">Your notes · '+noted.length+'</div>'
+    +'<div class="card"><div class="row"><div class="meta grow">'
+    +'Written on a question while studying. Copy them for your own review.</div>'
+    +'<button class="btn" data-note-copy="1">Copy all</button></div>'
+    +'<div class="stack">'+noted.map(({r,t,q,text})=>
+      '<div><div class="meta"><b>'+esc(t.course)+' · Q'+(r[1]+1)+'</b> — '+esc(t.title)+'</div>'
+      +'<div class="meta" style="font-family:\'Georgia\',Georgia,serif">'+esc(q.q||q.title||"")+'</div>'
+      +'<div class="notetxt" style="margin-top:5px">'+esc(text)+'</div></div>').join("")+'</div></div>';
+
+  h+='<div class="sec">Save your study history</div>'
+    +'<div class="card"><div class="row"><div class="meta grow">'
+    +'Saves everything — notes, scores, review schedule, flags — as <b>drill-state.json</b>. '
+    +'Keep the saved file as a portable backup.</div>'
+    +'<button class="btn" data-export-all="1">Save file</button></div>'
+    +'<div class="meta" style="margin-top:12px">Stored locally on this computer · <label class="btn" style="display:inline-block">Import backup<input type="file" accept="application/json,.json" data-import aria-label="Import backup" style="max-width:210px"></label></div></div>';
+
+  if(flags.length) h+='<div class="sec">Flagged</div><div class="empty">'+flags.length
+    +' card'+(flags.length>1?"s":"")+' flagged. Review their notes before revising lesson content.</div>';
+
+  el.innerHTML=h;
+}
+
+// every note that still points at a question that exists, newest test first
+function noteRefs(){
+  const out=[];
+  for(const t of byNew(TESTS)) t.questions.forEach((q,i)=>{
+    const text=(notes[key(t.id,i)]||"").trim();
+    if(text) out.push({r:[t.id,i],t,q,text});
+  });
+  return out;
+}
+// Everything the app knows, in one file the authoring assistant can read off disk.
+// The store is private to this page, so an export is the only way out of it.
+function exportState(){
+  return {
+    app:"Drill", exportedAt:new Date().toISOString(), schemaVersion:1,
+    tests:TESTS.map(t=>({
+      id:t.id, title:t.title, course:t.course, unit:t.unit||null,
+      created:t.created||null, about:t.about||null, archived:isArch(t.id),
+      supersedes:t.supersedes||null, superseded:isOld(t.id),
+      source:t.source||null, overlaps:overlaps()[t.id]||[],
+      questions:t.questions.map((q,i)=>({
+        index:i, ref:key(t.id,i), type:kind(q),
+        prompt:q.q||q.title||null,
+        options:q.options||null, correct:q.correct!=null?q.correct:null,
+        pairs:q.pairs||null, items:q.items||null,
+        why:q.why||null, tags:q.tags||[],
+        note:notes[key(t.id,i)]||null,
+        flagged:flags.includes(key(t.id,i)),
+        schedule:sched[key(t.id,i)]||null
+      }))
+    })),
+    notes:noteRefs().map(({r,t,q,text})=>({
+      ref:key(r[0],r[1]), course:t.course, test:t.title, testId:t.id,
+      questionNumber:r[1]+1, question:q.q||q.title||null, note:text
+    })),
+    attempts:rows().map(a=>({
+      id:a.id, testId:a.testId, title:a.title, mode:a.mode, done:a.done,
+      startedAt:a.startedAt?new Date(a.startedAt).toISOString():null,
+      finishedAt:a.finishedAt?new Date(a.finishedAt).toISOString():null,
+      elapsedMs:a.elapsed, position:a.i, furthest:a.max,
+      score:a.done?scoreOf(a):null, outOf:a.done?scorable(a):null,
+      answers:a.refs.map((r,i)=>({ref:key(r[0],r[1]), answer:a.answers[i],
+        checked:!!a.checked[i], correct:qOf(r)?right(qOf(r),a.answers[i]):null}))
+    })),
+    flags:flags.slice(), archived:archived.slice(), schedule:{...sched}
+  };
+}
+
+const notesText=()=>noteRefs().map(({r,t,q,text})=>
+  t.course+" — "+t.title+" · Q"+(r[1]+1)+"\n"
+  +"Question: "+(q.q||q.title||"(teaching card)")+"\n"
+  +"My note: "+text).join("\n\n");
+
+function detail(){
+  const t=test(view.id), hist=rows().filter(a=>a.done&&a.testId===t.id);
+  const open=rows().find(a=>!a.done&&a.testId===t.id), n=asks(t), kn=masteredIn(t);
+  el.innerHTML='<button class="tiny" data-home="1">'+ICON.back+' All tests</button>'
+    +'<h1 style="font-size:25px;font-weight:800;letter-spacing:-.025em;margin:6px 0 4px;text-wrap:balance">'+esc(t.title)+'</h1>'
+    +'<div class="meta">'+esc(t.course)+(t.unit?" · "+esc(t.unit):"")+' · '+n+' questions · added '+fmtWhen(madeAt(t))+'</div>'
+    +(t.about?'<div class="meta" style="font-size:15px;margin-top:8px">'+esc(t.about)+'</div>':'')
+    +sourceLine(t)
+    +(isOld(t.id)?'<div class="note-line">An earlier version. A newer one has replaced it in the '
+      +'lists and in the review schedule — everything here still works.</div>':'')
+    +overlapLine(t)
+    +'<div class="card" style="margin-top:16px">'+meter(kn,n)
+      +'<div class="row"><div class="meta">'+kn+' of '+n+' known</div>'
+      +'<div class="meta">'+hist.length+' attempt'+(hist.length===1?"":"s")+'</div></div></div>'
+    +(open?'<div class="card" style="margin-top:10px;border-color:var(--amber)">'
+      +'<div class="row"><div class="grow"><span class="chip on">In progress</span>'
+      +'<div class="meta" style="margin-top:6px">Stopped at question '+(open.i+1)+' of '+open.refs.length+'</div></div>'
+      +'<button class="btn pri" data-resume="'+esc(open.id)+'">Resume</button></div>'
+      +'<div class="meta">Starting a new run below discards it.</div></div>':'')
+    +'<div style="display:flex;gap:10px;margin:18px 0 8px">'
+      +'<button class="btn pri grow" data-practice="'+esc(t.id)+'">Practice</button>'
+      +'<button class="btn grow" data-exam="'+esc(t.id)+'">Exam mode</button></div>'
+    +'<div class="meta">Practice explains each answer as you go. Exam mode is timed and holds every explanation until the end.</div>'
+    +'<div class="sec">Past attempts</div>'+(hist.length
+      ? '<div class="stack">'+hist.map(a=>{
+          const sc=scoreOf(a), p=pct(sc,scorable(a));
+          return '<div class="card" data-att="'+esc(a.id)+'" role="button" tabindex="0"><div class="row">'
+            +'<div class="grow"><div class="ttl">'+sc+' / '+scorable(a)+' · '+p+'%</div>'
+            +'<div class="meta">'+fmt(a.finishedAt)+' · '+dur(a.elapsed)+(a.mode==="exam"?' · exam':'')+'</div></div>'
+            +'<span class="chip '+(p>=70?"ok":"no")+'">Review</span></div></div>';
+        }).join("")+'</div>'
+      : '<div class="empty">Not taken yet.</div>');
+}
+
+function quizChrome(a,stuck){
+  return '<div class="topbar">'
+    +'<button class="tiny" data-exit="1" aria-label="Save and exit">'+ICON.close+'</button>'
+    +progress(a.i,a.refs.length)
+    +'<div class="clock">'+(a.mode==="exam"?'<span id="clock">'+mins(a.elapsed)+'</span>'
+        :'<span id="clock" hidden></span>'+(a.i+1)+'/'+a.refs.length)+'</div>'
+    +'</div><div class="row navrow"><div class="meta">'+esc(a.title)+'</div>'
+    +'<div class="navbtns">'
+    +'<button class="tiny nav" data-back="1"'+(a.i>0?'':' disabled')+' aria-label="Previous card">'
+      +ICON.back+'</button>'
+    +'<button class="tiny nav" data-fwd="1"'+(a.i<(a.max||0)?'':' disabled')+' aria-label="Next card">'
+      +ICON.fwd+'</button>'
+    +(a.i<(a.max||0)?'<button class="tiny" data-jump="1">Latest</button>':'')
+    +(stuck?'<button class="tiny" data-next="1">Skip</button>':'')
+    +'<button class="tiny" data-restart-ask="1">'+ICON.redo+' Restart</button>'
+    +'</div></div>';
+}
+
+function noteCard(a,q,r){
+  const rk=key(r[0],r[1]), open=!!revealed[rk];
+  el.innerHTML=quizChrome(a)
+    +'<div class="note"><div class="eyebrow">'+esc(q.eyebrow||"Before you go on")+'</div>'
+    +'<h3>'+esc(q.title||"")+'</h3>'
+    +figure(q)
+    +(q.body||"").split("\n").filter(Boolean).map(x=>'<p>'+esc(x)+'</p>').join("")
+    +(q.reveal?'<div class="rv"><div class="rvq">'
+        +esc(q.ask||"Before you look — what would you expect here?")+'</div>'
+        +(open?'<div class="rva">'+esc(q.reveal)+'</div>'
+              :'<button class="btn wide" data-reveal="'+esc(rk)+'">Reveal</button>')
+      +'</div>':'')
+    +'</div>'+footRow(r,14)+kbHint(a,q)
+    +'<div class="dock"><div class="inner"><button class="btn pri wide" data-next="1">Got it</button></div></div>';
+}
+
+function prompt_(a,q,extra,stuck){
+  return quizChrome(a,stuck)+'<h2 class="stem">'+esc(q.q)+'</h2>'+figure(q)
+    +(extra?'<div class="hint">'+esc(extra)+'</div>':'');
+}
+
+// ── matching: tap a term, then its partner ─────────────────────────────────────
+function matchCard(a,q,r){
+  const st=a.answers[a.i]||{pairs:[],misses:0,sel:null,done:false};
+  const seed=seedOf(r[0]+":"+r[1]);
+  const L=shuffled(q.pairs.length,seed), R=shuffled(q.pairs.length,seed*7+13);
+  const numbered=col=>{ let n=0; return col.map(i=>[i, st.pairs.includes(i)?0:++n]); };
+  const tile=(side,orig,label,num)=>{
+    const matched=st.pairs.includes(orig);
+    const on=st.sel&&st.sel.side===side&&st.sel.orig===orig;
+    return '<button class="tile'+(matched?" matched":"")+(on?" on":"")+(st.miss===orig?" miss":"")+'"'
+      +(matched?" disabled":"")+' data-match="'+side+":"+orig+'">'
+      +(num?'<span class="key sm">'+num+'</span>':'')+esc(label)+'</button>';
+  };
+  el.innerHTML=prompt_(a,q,"Tap a term, then its partner — or press the numbers.",!st.done)
+    +'<div class="matchgrid">'
+    +'<div class="col">'+numbered(L).map(([i,n])=>tile("l",i,q.pairs[i][0],st.sel?0:n)).join("")+'</div>'
+    +'<div class="col">'+numbered(R).map(([i,n])=>tile("r",i,q.pairs[i][1],st.sel?n:0)).join("")+'</div>'
+    +'</div>'
+    +'<div class="meta" style="margin-top:12px">'+st.pairs.length+' of '+q.pairs.length+' matched'
+      +(st.misses?' · '+st.misses+' wrong '+(st.misses===1?'try':'tries'):'')+'</div>'
+    +kbHint(a,q)
+    +footRow(r,10)
+    +(st.done?dockFor(a,q,right(q,st)):'');
+}
+
+// ── ordering: tap the steps into sequence ──────────────────────────────────────
+function orderCard(a,q,r){
+  const picked=a.answers[a.i]||[], shown=a.mode==="practice"&&a.checked[a.i];
+  const order=shuffled(q.items.length,seedOf(r[0]+":"+r[1]));
+  const done=picked.length===q.items.length;
+  el.innerHTML=prompt_(a,q,"Tap them in order, or press the numbers. Tap a chosen one to take it back.",!(shown||done))
+    +'<ol class="chosen">'+picked.map((oi,n)=>{
+        const bad=shown&&oi!==n;
+        return '<li class="'+(shown?(bad?"bad":"good"):"")+'"><button data-unpick="'+n+'"'
+          +(shown?" disabled":"")+'><span class="num">'+(n+1)+'</span>'+esc(q.items[oi])+'</button></li>';
+      }).join("")+'</ol>'
+    +(picked.length<q.items.length
+      ? '<div class="opts">'+order.filter(i=>!picked.includes(i)).map((i,n)=>
+          '<button class="opt" data-order="'+i+'"><span class="key">'+(n+1)+'</span>'
+          +'<span>'+esc(q.items[i])+'</span></button>').join("")+'</div>'
+      : '')
+    +kbHint(a,q)
+    +footRow(r,12)
+    +(shown?dockFor(a,q,right(q,picked))
+      : done?'<div class="dock"><div class="inner"><button class="btn pri wide" data-'
+              +(a.mode==="exam"?"next":"check")+'="1">'
+              +(a.mode==="exam"?(a.i+1<a.refs.length?"Continue":"Finish"):"Check")+'</button></div></div>'
+      : '');
+}
+
+// the note box. Typing must never re-render (the textarea would be replaced mid-keystroke),
+// so input only banks into `notes` and render() flushes the live box before repainting.
+function noteBox(r,label){
+  const k=key(r[0],r[1]), has=(notes[k]||"").trim(), open=noteOpen===k;
+  if(!open) return '<button class="tiny pill'+(has?' on':'')+'" data-note-open="'+esc(k)+'">'
+    +(has?ICON.note+" Note":ICON.note+" "+(label||"Add a note"))+'</button>';
+  return '<div class="nb"><textarea data-note="'+esc(k)+'" placeholder="Anything about this card — '
+    +'a wrong answer, confusing wording, something to remember, something to ask about.">'+esc(notes[k]||"")+'</textarea>'
+    +'<div class="row" style="margin-top:6px">'
+    +'<div class="meta">Saved as you type. Read this from the Notes list on Today.</div>'
+    +'<button class="tiny pill" data-note-close="1">Done</button></div></div>';
+}
+// An explanation is a keeper line plus optional supporting detail, split on the first newline.
+// The keeper is the sentence worth remembering; the rest is there when you want it.
+function whyHtml(why,small){
+  const [keep,...rest]=String(why||"").split("\n");
+  const body=rest.join(" ").trim();
+  return '<div class="keeper'+(small?' sm':'')+'">'+esc(keep.trim())+'</div>'
+    +(body?'<div class="why'+(small?' sm':'')+'">'+esc(body)+'</div>':'');
+}
+
+// tells you what the keys do, and what space will do next
+function kbHint(a,q){
+  const k=kind(q), resolved=a.checked[a.i]||(a.mode==="exam"&&a.answers[a.i]!=null);
+  const last=a.i+1>=a.refs.length;
+  if(isNote(q)){
+    const rk=key(a.refs[a.i][0],a.refs[a.i][1]);
+    return '<div class="kbhint"><b>space</b> to '
+      +(q.reveal&&!revealed[rk]?'reveal':'continue')+'</div>';
+  }
+  const n = k==="mc" ? q.options.length : k==="order" ? q.items.length : q.pairs.length;
+  const pick = k==="match" ? '<b>1</b>–<b>'+n+'</b> to pair'
+             : k==="order" ? '<b>1</b>–<b>'+n+'</b> to order'
+             : '<b>1</b>–<b>'+n+'</b> to choose';
+  if(resolved) return '<div class="kbhint"><b>space</b> to '+(last?'finish':'continue')+'</div>';
+  // a single-answer card in practice reveals the moment you choose — there is nothing to confirm
+  const oneShot = k==="mc" && !isMulti(q) && a.mode==="practice";
+  return '<div class="kbhint">'+pick.replace("to choose", oneShot?"to answer":"to choose")
+    +(oneShot?'':' · <b>space</b> to check')+'</div>';
+}
+// flag + note, the row every question card ends with
+const footRow=(r,mt)=>'<div class="row" style="margin-top:'+(mt||12)+'px;justify-content:flex-start;gap:10px">'
+  +'<button class="tiny" data-flag="'+esc(key(r[0],r[1]))+'"'
+  +(flags.includes(key(r[0],r[1]))?' style="color:var(--amber)"':'')+'>'
+  +ICON.flag+(flags.includes(key(r[0],r[1]))?" Flagged":" Flag this")+'</button>'
+  +'</div>'+noteBox(r);
+
+function dockFor(a,q,ok){
+  const label=a.i+1<a.refs.length?"Continue":"Finish";
+  if(a.mode==="exam") return '<div class="dock"><div class="inner">'
+    +'<button class="btn pri wide" data-next="1">'+label+'</button></div></div>';
+  return '<div class="dock '+(ok?"ok":"no")+'"><div class="inner">'
+    +'<div class="verdict">'+(ok?ICON.check+"Correct":ICON.x+"Not quite")+'</div>'
+    +whyHtml(q.why)
+    +'<button class="btn '+(ok?"go":"no")+' wide" data-next="1">'+label+'</button></div></div>';
+}
+
+function quiz(){
+  const a=live, r=a.refs[a.i], q=qOf(r);
+  if(askRestart){                       // draw the real card, then swap its dock for the confirmation
+    askRestart=false; quiz(); askRestart=true;
+    el.querySelector(".dock")?.remove();
+    el.insertAdjacentHTML("beforeend",restartDock(a));
+    return;
+  }
+  if(!q){ a.i++; return a.i<a.refs.length?render():finish(); }
+  const k=kind(q);
+  if(k==="note") return noteCard(a,q,r);
+  if(k==="match") return matchCard(a,q,r);
+  if(k==="order") return orderCard(a,q,r);
+  const picked=a.answers[a.i], shown=a.mode==="practice"&&a.checked[a.i];
+  const sel=i=>isMulti(q)?(picked||[]).includes(i):picked===i;
+  const flagged=flags.includes(key(r[0],r[1]));
+  const ok=right(q,picked);
+
+  el.innerHTML=quizChrome(a,!shown&&!(a.mode==="exam"&&picked!=null))
+    +'<h2 class="stem">'+esc(q.q)+'</h2>'
+    +figure(q)
+    +(isMulti(q)?'<div class="hint">Select every answer that applies.</div>':'')
+    +'<div class="opts">'+q.options.map((o,i)=>{
+        let c="opt";
+        if(shown) c+= (isMulti(q)?q.correct.includes(i):i===q.correct) ? " good" : (sel(i)?" bad":"");
+        else if(sel(i)) c+=" sel";
+        return '<button class="'+c+'" data-pick="'+i+'"'+(shown?" disabled":"")+'>'
+          +'<span class="key">'+(i+1)+'</span><span>'+esc(o)+'</span></button>';
+      }).join("")+'</div>'
+    +kbHint(a,q)
+    +footRow(r,14)
+    + dock(a,q,picked,shown,ok);
+}
+
+function dock(a,q,picked,shown,ok){
+  const label=a.i+1<a.refs.length?"Continue":"Finish";
+  if(shown) return '<div class="dock '+(ok?"ok":"no")+'"><div class="inner">'
+    +'<div class="verdict">'+(ok?ICON.check+"Correct":ICON.x+"Not quite")+'</div>'
+    +whyHtml(q.why)
+    +'<button class="btn '+(ok?"go":"no")+' wide" data-next="1">'+label+'</button></div></div>';
+  if(picked==null) return '';
+  return '<div class="dock"><div class="inner"><button class="btn pri wide" data-'
+    +(a.mode==="exam"?"next":"check")+'="1">'+(a.mode==="exam"?label:"Check")+'</button></div></div>';
+}
+
+function ring(p){
+  const c=2*Math.PI*26;
+  return '<svg class="ring" width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">'
+    +'<circle cx="32" cy="32" r="26" fill="none" stroke="var(--sunken)" stroke-width="7"/>'
+    +'<circle cx="32" cy="32" r="26" fill="none" stroke="var(--accent)" stroke-width="7"'
+    +' stroke-linecap="round" stroke-dasharray="'+c+'" stroke-dashoffset="'+(c*(1-p/100))+'"'
+    +' transform="rotate(-90 32 32)"/></svg>';
+}
+
+function results(){
+  const a=rows().find(x=>x.id===view.id)||live;
+  if(!a){ view={s:"home"}; return home(); }
+  const sc=scoreOf(a), p=pct(sc,scorable(a));
+  el.innerHTML='<button class="tiny" data-home="1">'+ICON.back+' Home</button>'
+    +'<h1 style="font-size:25px;font-weight:800;letter-spacing:-.025em;margin:6px 0 0;text-wrap:balance">'+esc(a.title)+'</h1>'
+    +'<div class="score">'+ring(p)+'<div><b>'+sc+' / '+scorable(a)+'</b>'
+    +'<div class="meta">'+p+'% · '+fmt(a.finishedAt||now())+' · '+dur(a.elapsed)
+    +(a.mode==="exam"?' · exam mode':'')+'</div></div></div>'
+    +'<div class="sec">Every question</div><div class="stack">'
+    + a.refs.map((r,i)=>{
+        const q=qOf(r); if(!q||isNote(q)) return "";
+        const ok=right(q,a.answers[i]), pick=a.answers[i], k=kind(q);
+        const show=v=>{
+          if(v==null) return "skipped";
+          if(k==="match") return v.pairs.length+" of "+q.pairs.length+" matched, "+v.misses+" wrong tries";
+          if(k==="order") return v.map(x=>q.items[x]).join(" → ");
+          return Array.isArray(v)?v.map(x=>q.options[x]).join(" · "):q.options[v];
+        };
+        const answer=()=> k==="match" ? q.pairs.map(p=>p[0]+" = "+p[1]).join(" · ")
+          : k==="order" ? q.items.join(" → ") : show(q.correct);
+        return '<div class="card"><div class="rev '+(ok?"ok":"no")+'">'
+          +'<span class="chip '+(ok?"ok":"no")+'">'+(ok?"Right":"Wrong")+'</span>'
+          +'<div class="ttl" style="margin-top:7px;font-family:\'Georgia\',Georgia,serif;font-size:16px">'+esc(q.q)+'</div>'
+          +'<div class="meta">You said: '+esc(show(pick))+'</div>'
+          +(ok?"":'<div class="meta" style="color:var(--good)">Answer: '+esc(show(q.correct))+'</div>')+'</div>'
+          +whyHtml(q.why,true)
+          +'<div>'+(q.tags||[]).map(t=>'<span class="tag">'+esc(t)+'</span>').join("")+'</div>'
+          +'<div>'+noteBox(r,"Add a note")+'</div></div>';
+      }).join("")+'</div>'
+    +'<div class="dock"><div class="inner"><button class="btn pri wide" data-home="1">Done</button></div></div>';
+}
+
+function finish(){
+  live.done=true; live.finishedAt=now();
+  live.refs.forEach((r,i)=>{ const q=qOf(r); if(q&&!isNote(q)) grade(r,right(q,live.answers[i])); });
+  const id=live.id, sc=scoreOf(live), out=scorable(live);
+  saveLive(); saveSched(); live=null;
+  view={s:"results",id}; render();
+  if(out>=4&&sc===out){                              // a clean sweep, and only a clean sweep
+    setTimeout(()=>{ confetti(140); toast("Clean sweep — "+sc+"/"+out); },260);
+  }
+}
+
+// ── flourish ──────────────────────────────────────────────────────────────────
+// Three easter eggs, all skippable, none of them a streak, a goal or a point score.
+const QUIPS=["Spaced repetition works. Annoyingly.",
+  "The questions you skip are the ones on the exam.",
+  "Still here? The tests are that way.",
+  "Built on a Sunday. Runs on weekdays.",
+  "Nothing hidden here. Well — almost nothing."];
+let markTaps=0, markT=0;
+function markTap(btn){
+  clearTimeout(markT); markT=setTimeout(()=>{ markTaps=0; },1400);
+  markTaps++;
+  try{ btn.classList.remove("spin"); void btn.offsetWidth; btn.classList.add("spin"); }catch(e){}
+  if(markTaps>=5){
+    markTaps=0;
+    toast(QUIPS[Math.floor(Math.random()*QUIPS.length)]);
+    confetti(40);
+  }
+}
+
+const calm=()=>{ try{ return matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){ return false; } };
+
+let toastEl=null, toastT=0;
+function toast(msg){
+  try{
+    clearTimeout(toastT); toastEl?.remove();
+    const n=document.createElement("div");
+    n.className="toast"; n.setAttribute("role","status"); n.textContent=msg;
+    document.body.appendChild(n); toastEl=n;
+    toastT=setTimeout(()=>{ n.classList.add("out"); setTimeout(()=>n.remove(),320); }, 2100);
+  }catch(e){}
+}
+
+function confetti(n){
+  if(calm()) return;
+  try{
+    const box=document.createElement("div");
+    box.className="confetti"; box.setAttribute("aria-hidden","true");
+    const hues=["var(--accent)","var(--good)","var(--amber)","var(--bad)","var(--accent-edge)"];
+    for(let k=0;k<(n||70);k++){
+      const i=document.createElement("i");
+      i.style.background=hues[k%hues.length];
+      i.style.left=(10+Math.random()*80)+"%";
+      i.style.top=(18+Math.random()*22)+"%";
+      i.style.setProperty("--x",(Math.random()*440-220).toFixed(0)+"px");
+      i.style.setProperty("--y",(320+Math.random()*420).toFixed(0)+"px");
+      i.style.setProperty("--r",(Math.random()*900-450).toFixed(0)+"deg");
+      i.style.setProperty("--d",(1100+Math.random()*900).toFixed(0)+"ms");
+      box.appendChild(i);
+    }
+    document.body.appendChild(box);
+    setTimeout(()=>box.remove(),2400);
+  }catch(e){}
+}
+
+// numbers land on their value instead of blinking into place
+function countUp(el,to){
+  if(calm()||to<=0||to>9999){ el.textContent=to; return; }
+  const t0=performance.now(), ms=520;
+  const step=t=>{
+    const k=Math.min(1,(t-t0)/ms), e=1-Math.pow(1-k,3);
+    el.textContent=Math.round(to*e);
+    if(k<1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+// paint-time polish: draw the ring from zero, roll the stat numbers up
+function afterPaint(){
+  try{
+    const r=el.querySelector(".ring circle:last-child");
+    if(r&&!calm()){
+      const full=r.getAttribute("stroke-dasharray"), to=r.getAttribute("stroke-dashoffset");
+      r.setAttribute("stroke-dashoffset",full);
+      requestAnimationFrame(()=>requestAnimationFrame(()=>r.setAttribute("stroke-dashoffset",to)));
+    }
+    el.querySelectorAll("[data-count]").forEach(n=>countUp(n,+n.dataset.count));
+  }catch(e){}
+}
+
+function zoom(src,alt){
+  const box=document.createElement("div");
+  box.className="lb";
+  box.innerHTML='<img src="'+esc(src)+'" alt="'+esc(alt||"")+'"><div class="hint">Tap anywhere to close</div>';
+  const shut=()=>{ box.remove(); document.removeEventListener("keydown",onKey); };
+  const onKey=e=>{ if(e.key==="Escape"||e.key==="Enter"||e.key===" ") { e.preventDefault(); shut(); } };
+  box.addEventListener("click",shut);
+  document.addEventListener("keydown",onKey);
+  document.body.appendChild(box);
+}
+
+function restartDock(a){
+  return '<div class="dock warn"><div class="inner">'
+    +'<div class="verdict">'+ICON.redo+'Start this run over?</div>'
+    +'<div class="why">Your answers on this run are cleared and you go back to card 1. '
+    +'Finished attempts and the review schedule are not touched.</div>'
+    +'<div class="pair"><button class="btn" data-cancel="1">Keep going</button>'
+    +'<button class="btn no" data-restart-do="1">Restart</button></div></div></div>';
+}
+
+function render(){
+  clearInterval(tick);
+  flushNote();                                       // the repaint below destroys the open note box
+  ({home,browse,detail,quiz,results}[view.s])();
+  const d=el.querySelector(".dock");                 // fixed elements cannot live inside a transformed box
+  dockHost.innerHTML="";
+  if(d) dockHost.appendChild(d);
+  el.className = navDir>0?"in-l":navDir<0?"in-r":"in-up";
+  afterPaint();                                      // ring draw + count-ups, after the DOM exists
+  void el.offsetWidth;                               // restart the animation on every paint
+  navDir=0;
+  if(view.s==="quiz"){
+    tStart=now();
+    tick=setInterval(()=>{
+      syncElapsed();
+      const c=document.getElementById("clock"); if(c) c.textContent=mins(live.elapsed);
+    },1000);
+  } else tStart=0;
+  window.scrollTo(0,0);
+}
+
+// ── events ─────────────────────────────────────────────────────────────────────
+function handle(b){
+  syncElapsed();
+  const d=b.dataset;
+  if(d.home!=null){ askDrop=null; view={s:"home"}; return render(); }
+  if(d.view){ askDrop=null; view={s:d.view}; return render(); }
+  if(d.archToggle!=null){ archOpen=!archOpen; return; }        // <details> handles itself
+  if(d.arch||d.unarch){
+    const id=d.arch||d.unarch;
+    if(d.arch){ if(!isArch(id)) archived.push(id); }
+    else archived=archived.filter(x=>x!==id);
+    render(); return saveArch();
+  }
+  if(d.test){ view={s:"detail",id:d.test}; return render(); }
+  if(d.att){ view={s:"results",id:d.att}; return render(); }
+  if(d.dropAsk){ askDrop=d.dropAsk; return render(); }
+  if(d.dropCancel!=null){ askDrop=null; return render(); }
+  if(d.dropDo){
+    const a=attempts.find(x=>x.id===d.dropDo);
+    // only an unfinished run may be discarded; the completed log stays append-only
+    if(a&&!a.done){ attempts.splice(attempts.indexOf(a),1); del("attempts/"+a.id); if(live===a) live=null; }
+    askDrop=null; return render();
+  }
+  if(d.resume){ const a=rows().find(x=>x.id===d.resume); if(!a) return; askRestart=false; askDrop=null; live=a; view={s:"quiz"}; return render(); }
+  if(d.review){ return start("Review — due today",dueRefs(),"practice",null); }
+  if(d.tag){
+    const refs=[]; activeTests().forEach(t=>t.questions.forEach((q,i)=>(q.tags||[]).includes(d.tag)&&refs.push([t.id,i])));
+    return start("Weak spot — "+d.tag,refs.slice(0,REVIEW_MAX),"practice",null);
+  }
+  if(d.practice){ const t=test(d.practice); return start(t.title,refsOf(t),"practice",t.id); }
+  if(d.exam){ const t=test(d.exam); return start(t.title+" (exam)",refsOf(t),"exam",t.id); }
+  if(d.exit){ askRestart=false; saveLive(); view={s:"home"}; return render(); }
+  const needsRun="back fwd jump restartAsk cancel restartDo check match order unpick pick next"
+    .split(" ").some(k=>d[k]!=null);
+  if(needsRun&&!live){ view={s:"home"}; return render(); }   // stale control, nothing to act on
+  if(d.back!=null){ askRestart=false; if(live.i>0){ live.i--; navDir=-1; } render(); return saveLive(); }
+  if(d.fwd!=null){ askRestart=false; if(live.i<(live.max||0)){ live.i++; navDir=1; } render(); return saveLive(); }
+  if(d.jump!=null){ askRestart=false; navDir=1; live.i=Math.min(live.max||0,live.refs.length-1); render(); return saveLive(); }
+  if(d.restartAsk!=null){ askRestart=true; return render(); }
+  if(d.cancel!=null){ askRestart=false; return render(); }
+  if(d.restartDo!=null){
+    const a=live;
+    a.answers=a.refs.map(()=>null); a.checked=a.refs.map(()=>false);
+    a.i=0; a.max=0; a.elapsed=0; a.startedAt=now();
+    askRestart=false; render(); return saveLive();
+  }
+  if(d.check!=null){ live.checked[live.i]=true; render(); return saveLive(); }
+  if(d.reveal){ revealed[d.reveal]=true; return render(); }
+  if(d.vers){ versOpen[d.vers]=!versOpen[d.vers]; return render(); }
+  if(d.noteOpen){ noteOpen=noteOpen===d.noteOpen?null:d.noteOpen; return render(); }
+  if(d.noteClose!=null){ noteOpen=null; return render(); }
+  if(d.mark!=null){ markTap(b); return; }
+  if(d.noteCopy!=null){ copyOut(notesText(),b); return; }
+  if(d.exportAll!=null){ saveExport(b); return; }
+  if(d.flag!=null){
+    const i=flags.indexOf(d.flag); i<0?flags.push(d.flag):flags.splice(i,1);
+    render(); return saveFlags();
+  }
+  if(d.match){
+    const a=live, q=qOf(a.refs[a.i]);
+    const [side,oi]=d.match.split(":"); const orig=+oi;
+    const st=a.answers[a.i]||{pairs:[],misses:0,sel:null,done:false};
+    if(st.done||st.pairs.includes(orig)){ a.answers[a.i]=st; return; }
+    st.miss=null;                                   // clear last render's shake
+    if(!st.sel){ st.sel={side,orig}; }
+    else if(st.sel.side===side){ st.sel=st.sel.orig===orig?null:{side,orig}; }
+    else if(st.sel.orig===orig){ st.pairs.push(orig); st.sel=null; st.miss=null; }
+    else { st.misses++; st.miss=orig; st.sel=null; }
+    st.done=st.pairs.length===q.pairs.length;
+    if(st.done&&a.mode==="practice") a.checked[a.i]=true;
+    a.answers[a.i]=st; render(); return saveLive();
+  }
+  if(d.order!=null){
+    const a=live; if(a.checked[a.i]) return;
+    const cur=(a.answers[a.i]||[]).slice(); cur.push(+d.order);
+    a.answers[a.i]=cur; render(); return saveLive();
+  }
+  if(d.unpick!=null){
+    const a=live; if(a.checked[a.i]) return;
+    const cur=(a.answers[a.i]||[]).slice(); cur.splice(+d.unpick,1);
+    a.answers[a.i]=cur.length?cur:null; render(); return saveLive();
+  }
+  if(d.pick!=null){
+    const a=live, q=qOf(a.refs[a.i]), p=+d.pick;
+    if(a.checked[a.i]) return;
+    if(isMulti(q)){
+      const cur=a.answers[a.i]||[], j=cur.indexOf(p);
+      a.answers[a.i]= j<0?[...cur,p].sort((x,y)=>x-y):cur.filter(x=>x!==p);
+      if(!a.answers[a.i].length) a.answers[a.i]=null;
+    } else { a.answers[a.i]=p; if(a.mode==="practice") a.checked[a.i]=true; }
+    render(); return saveLive();
+  }
+  if(d.next!=null){
+    const a=live;                       // scheduling happens once, in finish()
+    if(a.i+1<a.refs.length){ a.i++; a.max=Math.max(a.max||0,a.i); navDir=1; render(); saveLive(); }
+    else if(a.i>=(a.max||0)) finish();
+    else { a.i=Math.min(a.max,a.refs.length-1); navDir=1; render(); saveLive(); }
+  }
+}
+let noteTimer=0;
+// bank whatever is in the open note box before any repaint replaces the textarea
+function flushNote(){
+  const ta=document.querySelector("textarea[data-note]");
+  if(!ta) return;
+  const k=ta.dataset.note, v=ta.value;
+  if((notes[k]||"")===v) return;
+  v.trim() ? notes[k]=v : delete notes[k];
+  saveNotes();
+}
+document.addEventListener("input",e=>{
+  const ta=e.target?.closest?.("textarea[data-note]");
+  if(!ta) return;
+  clearTimeout(noteTimer);
+  noteTimer=setTimeout(flushNote,500);        // never render() here: it would kill the textarea
+});
+// hand the whole store to the viewer as a file; the authoring assistant reads it off their disk
+async function saveExport(btn){
+  flushNote(); syncElapsed(); saveLive();
+  try{ await DrillRuntime.save(exportState()); if(btn)btn.textContent="Saved"; }
+  catch(e){ DrillRuntime.fail(e); }
+}
+
+function copyOut(text,btn){
+  const done=ok=>{ if(!btn) return;
+    btn.textContent=ok?"Copied":"Press ⌘C"; setTimeout(()=>{ if(view.s==="home") render(); },1400); };
+  try{
+    navigator.clipboard.writeText(text).then(()=>done(true),()=>fallback());
+  }catch(e){ fallback(); }
+  function fallback(){                        // clipboard perms vary inside the frame
+    const ta=document.createElement("textarea");
+    ta.value=text; ta.style.cssText="position:fixed;top:50%;left:50%;width:1px;height:1px;opacity:0";
+    document.body.appendChild(ta); ta.select();
+    let ok=false; try{ ok=document.execCommand("copy"); }catch(e){}
+    ta.remove(); done(ok);
+  }
+}
+
+const SEL="[data-home],[data-view],[data-test],[data-att],[data-resume],[data-review],[data-tag],"
+  +"[data-practice],[data-exam],[data-pick],[data-check],[data-next],[data-flag],[data-exit],"
+  +"[data-arch],[data-unarch],[data-arch-toggle],[data-match],[data-order],[data-unpick],"
+  +"[data-back],[data-fwd],[data-jump],[data-restart-ask],[data-restart-do],[data-cancel],"
+  +"[data-drop-ask],[data-drop-do],[data-drop-cancel],"
+  +"[data-note-open],[data-note-close],[data-note-copy],[data-export-all],[data-mark],"
+  +"[data-reveal],[data-vers]";
+document.addEventListener("click",e=>{
+  const im=e.target?.closest?.(".fig img");
+  if(im) return zoom(im.getAttribute("src"),im.getAttribute("alt"));
+  const b=e.target?.closest?.(SEL); if(b) handle(b);
+});
+document.addEventListener("change",e=>{
+  const sel=e.target?.closest("[data-course]");
+  if(sel){ browseCourse=sel.value; render(); }
+});
+document.addEventListener("keydown",e=>{
+  if(e.key!=="Enter"&&e.key!==" ") return;
+  if(document.querySelector(".lb")) return;
+  const b=e.target?.closest?.(SEL);
+  if(b&&b.tagName!=="BUTTON"){ e.preventDefault(); handle(b); }
+});
+// Full keyboard control of a run: number keys choose, space confirms and continues.
+// Letters stay as aliases for anyone with the old habit. Every branch preventDefaults,
+// because space scrolls the page and Enter re-fires whatever button still holds focus.
+function kbPick(n){                                    // n is 1-based, as printed on the card
+  const a=live, r=a.refs[a.i], q=qOf(r), k=kind(q);
+  if(k==="mc"){
+    if(n>q.options.length) return false;
+    handle({dataset:{pick:String(n-1)}}); return true;
+  }
+  if(k==="match"){
+    const st=a.answers[a.i]||{pairs:[],sel:null};
+    const seed=seedOf(r[0]+":"+r[1]);
+    const side=st.sel?"r":"l";
+    const col=shuffled(q.pairs.length, side==="l"?seed:seed*7+13)
+      .filter(i=>!st.pairs.includes(i));             // only what is still on screen
+    if(n>col.length) return false;
+    handle({dataset:{match:side+":"+col[n-1]}}); return true;
+  }
+  if(k==="order"){
+    const picked=a.answers[a.i]||[];
+    const rest=shuffled(q.items.length,seedOf(r[0]+":"+r[1])).filter(i=>!picked.includes(i));
+    if(n>rest.length) return false;
+    handle({dataset:{order:String(rest[n-1])}}); return true;
+  }
+  return false;
+}
+// what space does right now: continue if the card is resolved, else check if it can be
+function kbConfirm(){
+  const a=live, r=a.refs[a.i], q=qOf(r), k=kind(q);
+  if(isNote(q)){
+    const rk=key(r[0],r[1]);
+    if(q.reveal&&!revealed[rk]) return handle({dataset:{reveal:rk}}), true;
+    return handle({dataset:{next:"1"}}), true;
+  }
+  const resolved = a.checked[a.i] || (a.mode==="exam" && a.answers[a.i]!=null);
+  if(resolved) return handle({dataset:{next:"1"}}), true;
+  const ans=a.answers[a.i];
+  const ready = k==="mc"    ? ans!=null && (!isMulti(q) || ans.length>0)
+              : k==="match" ? !!(ans&&ans.done)
+              : k==="order" ? !!(ans&&ans.length===q.items.length)
+              : false;
+  if(ready) return handle({dataset:{check:"1"}}), true;
+  return false;
+}
+document.addEventListener("keydown",e=>{
+  if(view.s!=="quiz"||!live||e.metaKey||e.ctrlKey||e.altKey) return;
+  if(e.target?.closest?.(".nb")) return;                // the note box owns the keyboard while it is open
+  if(document.querySelector(".lb")) return;             // the enlarged figure owns the keyboard
+  if(askRestart){                                       // the confirm owns it too
+    if(e.key==="Escape"){ e.preventDefault(); handle({dataset:{cancel:"1"}}); }
+    return;
+  }
+  const q=qOf(live.refs[live.i]);
+  if(!q) return;
+
+  if(e.key===" "||e.key==="Spacebar"||e.key==="Enter"){
+    // a focused button already answers to space and Enter natively; do not double-fire
+    if(e.target?.closest?.("button")) return;
+    e.preventDefault();
+    kbConfirm();
+    return;
+  }
+  if(isNote(q)) return;                                 // a teaching card has one action, handled above
+
+  const n=+e.key;
+  if(Number.isInteger(n)&&n>=1&&n<=9){
+    if(kbPick(n)) e.preventDefault();
+    return;
+  }
+  const i=LETTERS.indexOf(e.key.toUpperCase());         // A-F still works
+  if(i>=0&&kind(q)==="mc"&&i<q.options.length){ e.preventDefault(); handle({dataset:{pick:String(i)}}); }
+});
+
+// swiping moves through cards you have already seen, never past the frontier
+let sw=null;
+document.addEventListener("pointerdown",e=>{
+  if(view.s!=="quiz"||askRestart||e.pointerType==="mouse"&&e.button!==0) return;
+  if(e.target?.closest?.(".matchgrid,.opts,.chosen,select,.dock,.navbtns,.nb")) return;  // let controls own their taps
+  sw={x:e.clientX,y:e.clientY,t:Date.now()};
+});
+document.addEventListener("pointerup",e=>{
+  if(!sw||view.s!=="quiz"||askRestart){ sw=null; return; }
+  const dx=e.clientX-sw.x, dy=e.clientY-sw.y, dt=Date.now()-sw.t;
+  sw=null;
+  if(dt>700||Math.abs(dx)<55||Math.abs(dx)<Math.abs(dy)*1.6) return;
+  handle({dataset: dx<0?{fwd:"1"}:{back:"1"}});
+});
+
+// egg 2: the old code still works
+(function(){
+  const SEQ=["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight",
+             "ArrowLeft","ArrowRight","b","a"];
+  let at=0;
+  document.addEventListener("keydown",e=>{
+    if(e.target?.closest?.(".nb")) return;               // not while writing a note
+    const k=e.key.length===1?e.key.toLowerCase():e.key;
+    at = k===SEQ[at] ? at+1 : (k===SEQ[0]?1:0);
+    if(at===SEQ.length){ at=0; confetti(120); toast("↑ ↑ ↓ ↓ ← → ← → B A"); }
+  });
+})();
+
+// the viewer can change theme at any time; let the swap land before animating again
+(function(){
+  const root=document.documentElement;
+  let t=null;
+  const freeze=()=>{ root.classList.add("swap"); clearTimeout(t);
+    t=setTimeout(()=>root.classList.remove("swap"),80); };
+  try{
+    // note: never watch "class" here - freeze() sets one, which would retrigger forever
+    new MutationObserver(freeze).observe(root,{attributes:true,attributeFilter:["data-theme","style"]});
+    matchMedia("(prefers-color-scheme: dark)").addEventListener("change",freeze);
+  }catch(e){}
+})();
+
+// ── boot ───────────────────────────────────────────────────────────────────────
+el.innerHTML="<div class=empty>Loading your study data…</div>";
+DrillRuntime.connect().then(async d=>{
+  if(!d) return;                      // no db: the app still runs, it just won't persist
+  db=d;
+  const clone=s=>JSON.parse(JSON.stringify(s.data()));   // snapshots are frozen
+  try{
+    const [as,sc,fl,ar,nt,cf]=await Promise.all([
+      db.collection("attempts").orderBy("startedAt","desc").limit(200).get(),
+      db.doc("state/sched").get(),
+      db.doc("state/flags").get(),
+      db.doc("state/archive").get(),
+      db.doc("state/notes").get(),
+      db.doc("state/carried").get()
+    ]);
+    attempts=as.docs.map(clone).map(normalize).filter(Boolean);
+    const ids=v=>(Array.isArray(v)?v:[]).filter(x=>typeof x==="string"&&x);
+    if(fl.exists) flags=ids(clone(fl).list);
+    if(ar.exists) archived=ids(clone(ar).list);
+    if(nt.exists){ const m=clone(nt).map;
+      if(m&&typeof m==="object") for(const [k,v] of Object.entries(m))
+        if(typeof v==="string"&&v.trim()) notes[k]=v; }
+    if(sc.exists){ const q=clone(sc).q;
+      if(q&&typeof q==="object") for(const [k,v] of Object.entries(q))
+        if(v&&Number.isFinite(v.box)&&Number.isFinite(v.due)) sched[k]=v; }
+    if(cf.exists) carried=ids(clone(cf).list);
+    carryForward();                    // must run after sched/notes/flags are in
+    if(view.s==="home"||view.s==="browse") render();
+  }catch(e){DrillRuntime.fail(e);}
+}).catch(DrillRuntime.fail);
+document.addEventListener("change",e=>{
+  if(e.target.matches?.("[data-import]")&&e.target.files[0])DrillRuntime.restore(e.target.files[0]);
+});
+window.drillStudyExport=()=>{flushNote();return exportState();};
+</script>
+</body></html>

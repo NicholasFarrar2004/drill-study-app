@@ -1,0 +1,18 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+const [source,snippet,output]=process.argv.slice(2);
+if(!source||!snippet||!output||source===output||fs.existsSync(output))throw Error('Usage: node append-test.mjs source.html test.json NEW-output.html (never overwrites)');
+const html=fs.readFileSync(source,'utf8'),t=JSON.parse(fs.readFileSync(snippet,'utf8'));
+const start=html.indexOf('const TESTS = ['),end=html.indexOf('\n];',start);
+if(start<0||end<0)throw Error('TESTS block not found');
+const existing=vm.runInNewContext(html.slice(html.indexOf('const IMG'),html.indexOf('let db=null'))+';TESTS');
+if(!t.id||!t.course||!t.title||!t.created||!t.about||!Array.isArray(t.questions)||!t.questions.length)throw Error('Incomplete test');
+const imagePattern=/^data:image\/(?:webp|png|jpeg|gif);base64,(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+for(const q of t.questions)if(q.img && (!imagePattern.test(q.img)||!q.img.split(',')[1]||!q.alt))throw Error('Image must be a complete base64 image data URL with alt text');
+if(existing.some(x=>x.id===t.id))throw Error('Test id already exists');
+const encoded=JSON.stringify(t,null,2).replaceAll('<','\\u003c');
+const before=html.slice(0,end).trimEnd();
+const merged=before+(before.endsWith(',')?'':',')+'\n'+encoded+html.slice(end);
+const updated=vm.runInNewContext(merged.slice(merged.indexOf('const IMG'),merged.indexOf('let db=null'))+';TESTS');
+if(JSON.stringify(updated.slice(0,-1))!==JSON.stringify(existing))throw Error('Existing content changed');
+fs.writeFileSync(output,merged,{flag:'wx'});console.log(`Appended ${t.id}; ${existing.length} existing tests unchanged. Run content-check.js before using this candidate.`);
