@@ -2,7 +2,7 @@
 
 Drill helps turn a set of lessons into practice you can return to. It explains a concept, asks you to apply it, and saves your answers so you can review the questions you missed.
 
-[How it works](#how-it-works) · [Quick start](#run) · [Try the demo](#five-minute-demonstration) · [Inputs and outputs](#inputs-and-outputs) · [Technical design](ARCHITECTURE.md) · [Tests and limits](QA.md) · [Contribution and license](PROVENANCE.md)
+[How it works](#how-it-works) · [Visual walkthrough](#visual-walkthrough) · [Quick start](#run) · [Try the demo](#five-minute-demonstration) · [Inputs and outputs](#inputs-and-outputs) · [Technical design](ARCHITECTURE.md) · [Tests and limits](QA.md) · [Contribution and license](PROVENANCE.md)
 
 ## How it works
 
@@ -10,7 +10,42 @@ Choose a lesson and work through teaching cards and questions. Practice mode exp
 
 The included example teaches a fictional workshop's parcel process: Receive, Pack, Dispatch. One lesson file supplies the teaching card and four questions. Answering them correctly produces a 4/4 score, a saved attempt and scheduled review questions. The example demonstrates the app without using real course materials or learner records.
 
+```mermaid
+flowchart LR
+    A[Lesson JSON] --> B[Teaching cards and practice]
+    B --> C[Feedback and saved attempts]
+    C --> D[Questions scheduled for review]
+    D --> B
+```
+
+## Visual walkthrough
+
+These screens follow the included fictional parcel lesson.
+
+### Choose a lesson
+
+The home screen lists the lesson and any questions due for review. Start practice to learn the Receive, Pack, Dispatch process.
+
+![Drill home screen with the fictional parcel lesson ready to start](examples/walkthrough-home.png)
+
+### Answer and get feedback
+
+Choose an answer to see why it works. Teaching cards explain the process first; matching and ordering questions check whether you can apply it.
+
+![A fictional practice question with answer choices and feedback](examples/walkthrough-question.png)
+
+### Finish and return later
+
+Four correct answers produce a 4/4 result. Drill saves the attempt and schedules the questions for review, so progress remains after you reload.
+
+![Completed fictional practice lesson with a 4/4 score](examples/walkthrough-results.png)
+
+<details>
+<summary>Earlier full-size result capture</summary>
+
 ![Fictional practice lesson completed with all four answers correct](examples/practice-result.png)
+
+</details>
 
 The sections below explain how to run the app, supply your own lessons and inspect its implementation. No programming is needed to try the included lesson once the local server is running.
 
@@ -77,6 +112,6 @@ The check runner tests the actual inline app script, synthetic storage, a tempor
 
 ## Questions and project context
 
-For a reproducible bug, [open an issue](https://github.com/NickManJam/drill-study-app/issues) with the steps, expected result and Python/browser versions. Use fictional examples instead of private lessons or study backups.
+For a reproducible bug, [open an issue](https://github.com/NicholasFarrar2004/drill-study-app/issues) with the steps, expected result and Python/browser versions. Use fictional examples instead of private lessons or study backups.
 
 Nicholas Farrar defined the learning workflow and directed AI-assisted implementation and testing. The [contribution record](PROVENANCE.md) explains that division of work. This is a local study app; remote hosting and cross-device synchronization are outside its current scope. No open-source license has been assigned.
