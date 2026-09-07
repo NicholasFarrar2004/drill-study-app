@@ -26,24 +26,24 @@ These screens follow the included fictional parcel lesson.
 
 The home screen lists the lesson and any questions due for review. Start practice to learn the Receive, Pack, Dispatch process.
 
-![Drill home screen with the fictional parcel lesson ready to start](examples/walkthrough-home.png)
+<img src="examples/walkthrough-home.png" alt="Drill home screen with the fictional parcel lesson ready to start" width="680">
 
 ### Answer and get feedback
 
 Choose an answer to see why it works. Teaching cards explain the process first; matching and ordering questions check whether you can apply it.
 
-![A fictional practice question with answer choices and feedback](examples/walkthrough-question.png)
+<img src="examples/walkthrough-question.png" alt="A fictional practice question with answer choices and feedback" width="680">
 
 ### Finish and return later
 
 Four correct answers produce a 4/4 result. Drill saves the attempt and schedules the questions for review, so progress remains after you reload.
 
-![Completed fictional practice lesson with a 4/4 score](examples/walkthrough-results.png)
+<img src="examples/walkthrough-results.png" alt="Completed fictional practice lesson with a 4/4 score" width="680">
 
 <details>
 <summary>Earlier full-size result capture</summary>
 
-![Fictional practice lesson completed with all four answers correct](examples/practice-result.png)
+<img src="examples/practice-result.png" alt="Fictional practice lesson completed with all four answers correct" width="680">
 
 </details>
 
