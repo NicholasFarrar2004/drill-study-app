@@ -1,0 +1,22 @@
+{
+  "id": "demo-check-count",
+  "title": "Count the crates",
+  "course": "Fictional Operations",
+  "created": "2026-09-07T12:05:00Z",
+  "about": "A tiny lesson for the append-only authoring example.",
+  "questions": [
+    {
+      "q": "Two crates arrive, then one more. How many crates arrived?",
+      "options": [
+        "Two",
+        "Three",
+        "Four"
+      ],
+      "correct": 1,
+      "why": "Two plus one equals three.",
+      "tags": [
+        "counting"
+      ]
+    }
+  ]
+}

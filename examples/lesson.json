@@ -1,0 +1,81 @@
+{
+  "id": "demo-parcel-flow",
+  "title": "Parcel flow at Cedar Workshop",
+  "course": "Fictional Operations",
+  "unit": "Order basics",
+  "created": "2026-09-07T12:00:00Z",
+  "about": "Learn a fictional three-step parcel process, then practice it.",
+  "questions": [
+    {
+      "eyebrow": "Start here",
+      "title": "Three stages, one parcel",
+      "body": "Cedar Workshop is fictional. Its parcel process has three stages: Receive, Pack, Dispatch.\nReceive records the order. Pack protects the item. Dispatch hands the parcel to a courier.",
+      "ask": "Which stage protects the item?",
+      "reveal": "Pack protects the item."
+    },
+    {
+      "q": "Which stage protects the item?",
+      "options": [
+        "Receive",
+        "Pack",
+        "Dispatch"
+      ],
+      "correct": 1,
+      "why": "Pack protects the item before dispatch.",
+      "tags": [
+        "workflow"
+      ]
+    },
+    {
+      "q": "Select both actions completed before Dispatch.",
+      "options": [
+        "Receive the order",
+        "Hand it to a courier",
+        "Pack the item"
+      ],
+      "correct": [
+        0,
+        2
+      ],
+      "why": "Receive and Pack both happen before Dispatch.",
+      "tags": [
+        "workflow"
+      ]
+    },
+    {
+      "type": "match",
+      "q": "Match each stage to its action.",
+      "pairs": [
+        [
+          "Receive",
+          "Record the order"
+        ],
+        [
+          "Pack",
+          "Protect the item"
+        ],
+        [
+          "Dispatch",
+          "Hand to courier"
+        ]
+      ],
+      "why": "Each stage has a distinct action.",
+      "tags": [
+        "workflow"
+      ]
+    },
+    {
+      "type": "order",
+      "q": "Put the stages in their working order.",
+      "items": [
+        "Receive",
+        "Pack",
+        "Dispatch"
+      ],
+      "why": "Receive comes first, followed by Pack and Dispatch.",
+      "tags": [
+        "workflow"
+      ]
+    }
+  ]
+}
