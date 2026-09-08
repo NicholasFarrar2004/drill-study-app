@@ -100,14 +100,30 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 
 /* archived drawer */
 .arch{margin-top:26px;border-top:1px solid var(--line);padding-top:10px}
-.arch summary{cursor:pointer;list-style:none;font-size:12px;font-weight:700;letter-spacing:.08em;
+.arch>summary{cursor:pointer;list-style:none;font-size:12px;font-weight:700;letter-spacing:.08em;
   text-transform:uppercase;color:var(--muted);padding:8px 2px;display:flex;align-items:center;gap:8px}
-.arch summary::-webkit-details-marker{display:none}
-.arch summary::before{content:"";width:0;height:0;border:5px solid transparent;
+.arch>summary::-webkit-details-marker{display:none}
+.arch>summary::before{content:"";width:0;height:0;border:5px solid transparent;
   border-left-color:currentColor;transition:transform .15s}
-.arch[open] summary::before{transform:rotate(90deg) translateX(-1px)}
-.arch summary:hover{color:var(--ink)}
-.archbody{padding-top:6px;opacity:.8}
+.arch[open]>summary::before{transform:rotate(90deg) translateX(-1px)}
+.arch>summary:hover{color:var(--ink)}
+.archbody{padding-top:6px}
+.test-card.complete{background:var(--good-soft);border-color:var(--good-edge);border-left-width:4px}
+.test-title{display:block;text-align:left;font-size:16px;font-weight:750;line-height:1.4;padding:7px 0 0;text-wrap:balance}
+.test-title:hover{text-decoration:underline}
+.attempt-face{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:7px}
+.test-card{position:relative;isolation:isolate}
+.test-card.layered{margin-bottom:14px;box-shadow:0 5px 0 -1px var(--surface),0 5px 0 0 var(--line-str),0 10px 0 -1px var(--surface),0 10px 0 0 var(--line-str)}
+.stack-nav{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.stack-nav .pill{display:inline-flex;align-items:center;gap:4px;min-height:36px}
+.tiny:disabled{opacity:.45;cursor:default}
+.fold{border-top:1px solid var(--line);padding-top:7px}
+.fold>summary{cursor:pointer;font-size:13px;font-weight:650;color:var(--muted);padding:6px 0}
+.fold>summary:hover{color:var(--ink)}
+.fold[open]>.stack{margin-top:10px}
+.review-link{text-align:left;padding:9px;background:var(--sunken);border-radius:8px;font-size:13px}
+.complete-banner{background:var(--good-soft);border-color:var(--good-edge)}
+@media(max-width:420px){.test-card>.row{gap:8px}.test-card>.row>.btn{padding:9px 10px;font-size:14px}}
 
 /* stat strip */
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
@@ -462,10 +478,10 @@ const DAY=864e5;
 const LETTERS=["A","B","C","D","E","F"];
 
 let db=null, view={s:"home"}, tick=null, tStart=0;
-let attempts=[], live=null, sched={}, flags=[], archived=[];  // live = the attempt being taken
+let attempts=[], live=null, sched={}, flags=[], archived=[], completedRuns=[];  // live = the attempt being taken
 let browseCourse="All", archOpen=false, askRestart=false, navDir=0;  // survive re-renders
 let askDrop=null;                            // id of the unfinished run awaiting a discard confirm
-let versOpen={}, revealed={};          // testId -> earlier versions shown; ref -> teaching card revealed
+let versOpen={}, revealed={}, stackPositions={};          // testId -> earlier versions shown; ref -> teaching card revealed
 let carried=[];                        // ids of tests whose progress has already been carried forward
 let notes={}, noteOpen=null;                 // notes["<testId>:<cardIndex>"] = free text; noteOpen = the ref being edited
 const el=document.getElementById("app");
@@ -479,7 +495,7 @@ const qOf=r=>test(r[0])?.questions[r[1]];
 const kind=q=>q.type||(q.options?"mc":"note");      // mc | multi | match | order | note
 const isMulti=q=>Array.isArray(q.correct);
 const isNote=q=>!!q&&kind(q)==="note";              // a teaching card, not a question
-const scorable=a=>a.refs.filter(r=>{const q=qOf(r); return q&&!isNote(q);}).length;
+const roundScorable=a=>a.refs.filter(r=>{const q=qOf(r); return q&&!isNote(q);}).length;
 function right(q,a){
   if(a==null) return false;
   const k=kind(q);
@@ -497,8 +513,33 @@ function shuffled(n,seed){
   return idx;
 }
 const seedOf=str=>{ let h=0; for(const c of str) h=(h*31+c.charCodeAt(0))|0; return Math.abs(h)+1; };
-const scoreOf=a=>a.refs.reduce((n,r,i)=>{const q=qOf(r);
+const roundScoreOf=a=>a.refs.reduce((n,r,i)=>{const q=qOf(r);
   return n+(q&&!isNote(q)&&right(q,a.answers[i])?1:0);},0);
+// Review rounds stay in one attempt; first-pass scores never get overwritten.
+const firstRound=a=>a.rounds?.[0]||a;
+const scorable=a=>roundScorable(firstRound(a));
+const scoreOf=a=>roundScoreOf(firstRound(a));
+const missedRefs=a=>a.refs.filter((r,i)=>{const q=qOf(r);return q&&!isNote(q)&&!right(q,a.answers[i]);});
+const originalTotal=a=>a.originalTotal||[...new Set(firstRound(a).refs.map(r=>r[0]))]
+  .reduce((n,id)=>n+(test(id)?asks(test(id)):0),0)||roundScorable(firstRound(a));
+const restartCount=a=>a.rounds?.length||0;
+const reviewSummary=a=>restartCount(a)
+  ? restartCount(a)+' restart'+(restartCount(a)===1?'':'s')+' · '
+    +(a.done&&!missedRefs(a).length?'All questions correct':missedRefs(a).length+' remaining')
+  : '';
+const shortReview=a=>!a.testId&&!restartCount(a)&&roundScorable(a)>0&&roundScorable(a)*5<originalTotal(a);
+function continueReview(a){
+  const session=a.done?sessionFor(a):null;
+  const refs=session?session.pending:missedRefs(a);
+  if(a.mode!=="practice"||!refs.length)return;
+  if(session?.linked.length)a.priorReviewIds=session.linked.map(v=>v.id);
+  const round={refs:a.refs,answers:a.answers,checked:a.checked,finishedAt:a.finishedAt||now()};
+  a.originalTotal=originalTotal(a);
+  a.rounds=[...(a.rounds||[]),round];
+  a.refs=refs; a.answers=refs.map(()=>null); a.checked=refs.map(()=>false);
+  a.i=0; a.max=0; a.done=false; delete a.finishedAt;
+  live=a; askRestart=false; view={s:"quiz"}; saveLive(); render();
+}
 const mins=ms=>Math.floor(ms/6e4)+":"+String(Math.floor(ms%6e4/1000)).padStart(2,"0");  // running clock
 const dur=ms=>{ const m=Math.floor(ms/6e4), s=Math.floor(ms%6e4/1000);
   return m?m+"m "+s+"s":s+"s"; };
@@ -535,7 +576,7 @@ const saveLive=()=>live&&put("attempts/"+live.id,live);
 const saveSched=()=>put("state/sched",{q:sched});
 const saveFlags=()=>put("state/flags",{list:flags});
 const saveNotes=()=>put("state/notes",{map:notes});
-const saveArch=()=>put("state/archive",{list:archived});
+const saveArch=()=>put("state/archive",{list:archived,completedRuns});
 const saveCarried=()=>put("state/carried",{list:carried});
 const syncElapsed=()=>{ if(live&&view.s==="quiz"&&tStart){ live.elapsed+=now()-tStart; tStart=now(); } };
 
@@ -624,13 +665,13 @@ function overall(){
 }
 function tagStats(){
   const m={};
-  rows().filter(a=>a.done).forEach(a=>a.refs.forEach((r,i)=>{
+  rows().filter(a=>a.done).forEach(record=>{const a=firstRound(record);a.refs.forEach((r,i)=>{
     const q=qOf(r); if(!q||isNote(q)||isArch(r[0])) return;
     (q.tags||[]).forEach(tg=>{
       m[tg]=m[tg]||{n:0,bad:0};
       m[tg].n++; if(!right(q,a.answers[i])) m[tg].bad++;
     });
-  }));
+  });});
   return Object.entries(m).filter(([,v])=>v.bad).sort((a,b)=>b[1].bad/b[1].n-a[1].bad/a[1].n).slice(0,5);
 }
 
@@ -657,6 +698,14 @@ function normalize(a){
     :(test(a.testId)?.title||test(a.refs[0][0])?.title||"Untitled session");
   a.mode=a.mode==="exam"?"exam":"practice";
   a.id=typeof a.id==="string"&&a.id?a.id:(a.testId||"mix")+"-"+(a.startedAt||0);
+  // Old attempts remain valid; only accept structurally complete saved rounds.
+  if(a.rounds!=null){
+    if(!Array.isArray(a.rounds)||!a.rounds.every(r=>r&&Array.isArray(r.refs)&&r.refs.length
+      &&r.refs.every(x=>Array.isArray(x)&&x.length===2)&&Array.isArray(r.answers)
+      &&Array.isArray(r.checked)&&r.answers.length===r.refs.length&&r.checked.length===r.refs.length))
+      delete a.rounds;
+  }
+  if(!Number.isInteger(a.originalTotal)||a.originalTotal<1)delete a.originalTotal;
   return a;
 }
 
@@ -664,10 +713,14 @@ function normalize(a){
 function start(title,refs,mode,testId){
   if(!refs.length) return;
   const stale=rows().find(a=>!a.done&&(a.testId||a.title)===(testId||title));
-  if(stale){ attempts.splice(attempts.indexOf(stale),1); del("attempts/"+stale.id); }
-  live={id:(testId||"mix")+"-"+now(), testId:testId||null, title, mode, refs,
+  if(stale){ if(restartCount(stale)){ stale.done=true; stale.finishedAt=now(); put("attempts/"+stale.id,stale); }
+    else { attempts.splice(attempts.indexOf(stale),1); del("attempts/"+stale.id); } }
+  if(testId&&isArch(testId)){archived=archived.filter(id=>id!==testId);saveArch();}
+  let id=(testId||"mix")+"-"+now();while(rows().some(a=>a.id===id))id+='-1';
+  live={id, testId:testId||null, title, mode, refs,
         answers:refs.map(()=>null), checked:refs.map(()=>false), i:0, max:0, done:false,
         startedAt:now(), elapsed:0};
+  if(testId)delete stackPositions[testId];
   attempts.unshift(live);
   view={s:"quiz"}; render(); saveLive();
 }
@@ -687,27 +740,98 @@ const meter=(v,n,cls)=>'<div class="meter'+(cls?" "+cls:"")+'"><i style="width:'
 
 const byNew=list=>[...list].sort((x,y)=>madeAt(y)-madeAt(x));
 
+const questionRefs=t=>refsOf(t).filter(r=>!isNote(qOf(r)));
+const refKey=r=>key(r[0],r[1]);
+function fullAttempt(a,t=test(a.testId)){
+  if(!t||a.testId!==t.id)return false;
+  const expected=questionRefs(t), actual=new Set(firstRound(a).refs.filter(r=>qOf(r)&&!isNote(qOf(r))).map(refKey));
+  return expected.length>0&&actual.size===expected.length&&expected.every(r=>actual.has(refKey(r)));
+}
+function testSessions(t){
+  const roots=rows().filter(a=>fullAttempt(a,t)).sort((a,b)=>a.startedAt-b.startedAt||a.id.localeCompare(b.id));
+  const reviews=rows().filter(a=>!a.testId&&a.done&&a.mode==='practice').sort((a,b)=>a.startedAt-b.startedAt||a.id.localeCompare(b.id));
+  return roots.map((a,index)=>{
+    const remaining=new Set(questionRefs(t).map(refKey)), linked=[];
+    const apply=round=>round.refs.forEach((r,i)=>{
+      const q=qOf(r);if(r[0]!==t.id||!q||isNote(q))return;
+      if(right(q,round.answers[i]))remaining.delete(refKey(r));else remaining.add(refKey(r));
+    });
+    const rounds=a.rounds||[];
+    if(rounds.length)apply(rounds[0]);else if(a.done)apply(a);
+    for(const id of Array.isArray(a.priorReviewIds)?a.priorReviewIds:[]){
+      const review=reviews.find(r=>r.id===id);if(!review)continue;
+      const refs=firstRound(review).refs.filter(r=>qOf(r)&&!isNote(qOf(r)));
+      if(!refs.length||!refs.every(r=>r[0]===t.id&&remaining.has(refKey(r))))continue;
+      linked.push(review);(review.rounds||[]).forEach(apply);apply(review);
+    }
+    rounds.slice(1).forEach(apply);if(rounds.length&&a.done)apply(a);
+    if(a.done)for(const review of reviews){
+      const refs=firstRound(review).refs.filter(r=>qOf(r)&&!isNote(qOf(r)));
+      if(review.startedAt<(a.finishedAt||a.startedAt)||review.startedAt>=(roots[index+1]?.startedAt||Infinity))continue;
+      // A tiny unrelated/spaced review cannot turn a partial test into a full completion.
+      if(!refs.length||!refs.every(r=>r[0]===t.id&&remaining.has(refKey(r))))continue;
+      linked.push(review);(review.rounds||[]).forEach(apply);apply(review);
+    }
+    return {a,index,pending:questionRefs(t).filter(r=>remaining.has(refKey(r))),label:index?'Retake '+index:'Original attempt',linked,remaining:remaining.size,
+      complete:a.done&&remaining.size===0};
+  });
+}
+function sessionFor(a){const t=test(a.testId);return t?testSessions(t).find(s=>s.a.id===a.id):null;}
+function archiveCompleted(){
+  let changed=false;
+  for(const t of TESTS){
+    const sessions=testSessions(t), latest=sessions[sessions.length-1];
+    if(!latest?.complete||completedRuns.includes(latest.a.id))continue;
+    completedRuns.push(latest.a.id);if(!isArch(t.id))archived.push(t.id);changed=true;
+  }
+  if(changed)saveArch();
+}
+function attemptLayer(session,showComplete=true){
+  const a=session.a, action=a.done?'att':'resume';
+  if(!a.done&&askDrop===a.id)return '<div class="attempt-face"><div class="meta">Discard this run? Completed rounds are retained.</div>'
+    +'<div class="row"><button class="btn no" data-drop-do="'+esc(a.id)+'">Discard</button><button class="btn" data-drop-cancel="1">Keep it</button></div></div>';
+  return '<div class="attempt-face"><div class="row"><div class="grow">'
+    +'<div class="ttl">'+session.label+'</div><div class="meta">'+fmtWhen(a.startedAt)+'</div>'
+    +'<div class="meta">'+(a.done||restartCount(a)?scoreOf(a)+'/'+scorable(a)+' first pass':'In progress')
+    +(restartCount(a)?' · '+restartCount(a)+' restart'+(restartCount(a)===1?'':'s'):'')+'</div>'
+    +(session.linked.length?'<div class="meta">'+session.linked.length+' linked review'+(session.linked.length===1?'':'s')+'</div>':'')
+    +'</div><button class="btn" data-'+action+'="'+esc(a.id)+'">'+(a.done?'Results':'Resume')+'</button></div>'
+    +(!a.done?'<div class="row"><div class="meta">Question '+(a.i+1)+' of '+a.refs.length+'</div><button class="tiny pill" data-drop-ask="'+esc(a.id)+'">Discard</button></div>':'')
+    +(session.complete?(showComplete?'<span class="chip ok">'+ICON.check+' Complete</span>':''):a.done?'<div class="meta">'+session.remaining+' to review</div>':'')
+    +(session.linked.length?'<details class="fold"><summary>Earlier review sessions</summary><div class="stack">'
+      +session.linked.slice().reverse().map(v=>'<button class="review-link" data-att="'+esc(v.id)+'">'
+        +scoreOf(v)+'/'+scorable(v)+' · '+fmtWhen(v.startedAt)+'</button>').join('')+'</div></details>':'')+'</div>';
+}
+function selectedSession(t,sessions){
+  const chosen=stackPositions[t.id];
+  return sessions.find(s=>s.a.id===chosen)||sessions[sessions.length-1];
+}
+function stackNav(t,sessions,selected){
+  if(sessions.length<2)return '';
+  const i=sessions.indexOf(selected);
+  return '<div class="stack-nav" aria-label="Attempt stack">'
+    +'<button class="tiny pill" data-stack-back="'+esc(t.id)+'"'+(i===0?' disabled':'')+' aria-label="Previous attempt">'+ICON.back+' Earlier</button>'
+    +'<span class="meta">'+(i+1)+' of '+sessions.length+'</span>'
+    +'<button class="tiny pill" data-stack-forward="'+esc(t.id)+'"'+(i===sessions.length-1?' disabled':'')+' aria-label="Next attempt">Newer '+ICON.fwd+'</button></div>';
+}
 function testCard(t,newest){
-  const last=rows().find(a=>a.done&&a.testId===t.id), n=asks(t), kn=masteredIn(t);
-  const cards=t.questions.length-n, arch=isArch(t.id);
-  return '<div class="card" data-test="'+esc(t.id)+'">'
-    +'<div class="row"><div class="grow">'
-    +'<span class="chip">'+esc(t.course)+'</span>'
-    +(t.id===newest?'<span class="chip on">Newest</span>':'')
+  const sessions=testSessions(t), latest=sessions[sessions.length-1], n=asks(t), cards=t.questions.length-n, arch=isArch(t.id);
+  const selected=selectedSession(t,sessions), complete=!!selected?.complete;
+  return '<section class="card test-card'+(sessions.length>1?' layered':'')+(complete?' complete':'')+'" aria-label="'+esc(t.title)+'">'
+    +'<div class="row"><div class="grow"><span class="chip">'+esc(t.course)+'</span>'
+    +(complete?'<span class="chip ok">'+ICON.check+' Complete</span>':t.id===newest?'<span class="chip on">Newest</span>':'')
     +(chainOf(t).length>1?'<span class="chip">v'+chainOf(t).length+'</span>':'')
-    +'<div class="ttl" style="margin-top:7px">'+esc(t.title)+'</div>'
-    +'<div class="meta">Added '+fmtWhen(madeAt(t))+'</div>'
-    +'</div><button class="btn" data-test="'+esc(t.id)+'">Open</button></div>'
-    +(t.about?'<div class="meta" style="margin-top:0">'+esc(t.about)+'</div>':'')
-    +sourceLine(t)
-    +overlapLine(t)
-    +meter(kn,n)
-    +'<div class="row"><div class="meta">'+n+' questions'
-      +(cards?' · '+cards+' card'+(cards>1?'s':''):'')+' · '+kn+' known · '
-      +(last?'last score '+scoreOf(last)+'/'+scorable(last):'not taken yet')+'</div>'
-    +'<button class="tiny pill" data-'+(arch?'unarch':'arch')+'="'+esc(t.id)+'">'
-      +(arch?'Restore':'Archive')+'</button></div>'
-    +versionBlock(t)+'</div>';
+    +'<button class="test-title" data-test="'+esc(t.id)+'">'+esc(t.title)+'</button>'
+    +'<div class="meta">'+n+' questions'+(cards?' · '+cards+' teaching card'+(cards===1?'':'s'):'')+'</div></div>'
+    +(latest&&!latest.a.done?'':'<button class="btn '+(!latest?'pri':'')+'" data-'+(latest&&!latest.a.done?'resume':'practice')+'="'+esc(latest&&!latest.a.done?latest.a.id:t.id)+'">'
+    +(latest?latest.a.done?'Retake':'Resume':'Practice')+'</button>')+'</div>'
+    +(selected?attemptLayer(selected,false)+stackNav(t,sessions,selected):'<div class="meta">not taken yet</div>')
+    +'<details class="fold"><summary>Test details</summary>'
+      +(t.about?'<div class="meta">'+esc(t.about)+'</div>':'')+sourceLine(t)+overlapLine(t)
+      +'<div class="meta">Added '+fmtWhen(madeAt(t))+' · '+masteredIn(t)+' known by spaced review</div>'
+      +'<div class="row"><button class="tiny pill" data-test="'+esc(t.id)+'">Open test</button>'
+      +'<button class="tiny pill" data-'+(arch?'unarch':'arch')+'="'+esc(t.id)+'">'+(arch?'Restore':'Archive')+'</button></div></details>'
+    +versionBlock(t)+'</section>';
 }
 
 // where the questions came from, so the next test knows where this one stopped
@@ -787,8 +911,9 @@ function browse(){
 
 function home(){
   // an in-progress run on an archived test is hidden, not dropped; restoring brings it back
-  const due=dueRefs(), open=rows().filter(a=>!a.done&&!isArch(a.testId)), weak=tagStats();
-  const doneAtts=rows().filter(a=>a.done), o=overall();
+  const due=dueRefs(), open=rows().filter(a=>!a.done&&!isArch(a.testId)&&!fullAttempt(a)), weak=tagStats();
+  const grouped=new Set(TESTS.flatMap(t=>testSessions(t).flatMap(s=>[s.a.id,...s.linked.map(a=>a.id)])));
+  const doneAtts=rows().filter(a=>a.done&&!grouped.has(a.id)), o=overall();
 
   let h='<div class="row"><button class="wordmark" data-mark="1" aria-label="Drill">'+ICON.mark+'Drill</button>'+switcher("home")+'</div>'
     +'<div class="stats">'
@@ -808,7 +933,7 @@ function home(){
         +'<button class="btn grow" data-drop-cancel="1">Keep it</button></div></div>'
       : '<div class="card"><div class="row"><div class="grow">'
         +'<div class="ttl">'+esc(a.title)+'</div>'
-        +'<div class="meta">Question '+(a.i+1)+' of '+a.refs.length+'</div></div>'
+        +'<div class="meta">Question '+(a.i+1)+' of '+a.refs.length+(restartCount(a)?' · Restart '+restartCount(a):'')+'</div></div>'
         +'<button class="btn pri" data-resume="'+esc(a.id)+'">Resume</button></div>'
         +progress(a.i,a.refs.length)
         +'<div class="row" style="justify-content:flex-end">'
@@ -834,16 +959,20 @@ function home(){
     +'<button class="btn" data-tag="'+esc(tg)+'">Drill</button></div>'
     +meter(v.n-v.bad,v.n,"warn")+'</div>').join("")+'</div>';
 
-  h+='<div class="sec">Attempt log</div>'+(doneAtts.length
-    ? '<div class="stack">'+doneAtts.slice(0,20).map(a=>{
-        const sc=scoreOf(a), p=pct(sc,scorable(a));
-        return '<div class="card" data-att="'+esc(a.id)+'" role="button" tabindex="0">'
-          +'<div class="row"><div class="grow"><div class="ttl">'+esc(a.title)+'</div>'
-          +'<div class="meta">'+fmt(a.finishedAt)+' · '+dur(a.elapsed)
-          +(a.mode==="exam"?' · exam':'')+'</div></div>'
-          +'<span class="chip '+(p>=70?"ok":"no")+'">'+sc+'/'+scorable(a)+'</span></div></div>';
-      }).join("")+'</div>'
-    : '<div class="empty">No completed attempts yet.</div>');
+  const attemptCard=a=>{
+    const sc=scoreOf(a), p=pct(sc,scorable(a));
+    return '<div class="card" data-att="'+esc(a.id)+'" role="button" tabindex="0">'
+      +'<div class="row"><div class="grow"><div class="ttl">'+esc(a.title)+'</div>'
+      +'<div class="meta">'+fmt(a.finishedAt)+' · '+dur(a.elapsed)+(a.mode==="exam"?' · exam':'')+'</div>'
+      +(restartCount(a)?'<div class="meta">'+reviewSummary(a)+'</div>':'')+'</div>'
+      +'<span class="chip '+(p>=70?"ok":"no")+'">'+sc+'/'+scorable(a)+'</span></div></div>';
+  };
+  const regular=doneAtts.filter(a=>!shortReview(a)), small=doneAtts.filter(shortReview);
+  if(doneAtts.length)h+='<details class="fold" style="margin-top:24px"><summary>Other review sessions · '+doneAtts.length+'</summary>'+(doneAtts.length
+    ? '<div class="stack">'+regular.slice(0,20).map(attemptCard).join('')+'</div>'
+      +(small.length?'<details class="arch"><summary>Earlier short reviews · '+small.length+'</summary>'
+        +'<div class="stack">'+small.map(attemptCard).join('')+'</div></details>':'')
+    : '<div class="empty">No completed attempts yet.</div>')+'</details>';
 
   const noted=noteRefs();
   if(noted.length) h+='<div class="sec">Your notes · '+noted.length+'</div>'
@@ -907,11 +1036,13 @@ function exportState(){
       startedAt:a.startedAt?new Date(a.startedAt).toISOString():null,
       finishedAt:a.finishedAt?new Date(a.finishedAt).toISOString():null,
       elapsedMs:a.elapsed, position:a.i, furthest:a.max,
-      score:a.done?scoreOf(a):null, outOf:a.done?scorable(a):null,
+      score:a.done?roundScoreOf(a):null, outOf:a.done?roundScorable(a):null,
+      firstRoundScore:scoreOf(a), firstRoundTotal:scorable(a),
+      restarts:restartCount(a), originalTotal:originalTotal(a), reviewRounds:a.rounds||[],
       answers:a.refs.map((r,i)=>({ref:key(r[0],r[1]), answer:a.answers[i],
         checked:!!a.checked[i], correct:qOf(r)?right(qOf(r),a.answers[i]):null}))
     })),
-    flags:flags.slice(), archived:archived.slice(), schedule:{...sched}
+    flags:flags.slice(), archived:archived.slice(), completedRuns:completedRuns.slice(), schedule:{...sched}
   };
 }
 
@@ -921,7 +1052,8 @@ const notesText=()=>noteRefs().map(({r,t,q,text})=>
   +"My note: "+text).join("\n\n");
 
 function detail(){
-  const t=test(view.id), hist=rows().filter(a=>a.done&&a.testId===t.id);
+  const t=test(view.id); if(!t){view={s:"home"};return home();}
+  const sessions=testSessions(t), hist=sessions.filter(s=>s.a.done).map(s=>s.a);
   const open=rows().find(a=>!a.done&&a.testId===t.id), n=asks(t), kn=masteredIn(t);
   el.innerHTML='<button class="tiny" data-home="1">'+ICON.back+' All tests</button>'
     +'<h1 style="font-size:25px;font-weight:800;letter-spacing:-.025em;margin:6px 0 4px;text-wrap:balance">'+esc(t.title)+'</h1>'
@@ -943,14 +1075,9 @@ function detail(){
       +'<button class="btn pri grow" data-practice="'+esc(t.id)+'">Practice</button>'
       +'<button class="btn grow" data-exam="'+esc(t.id)+'">Exam mode</button></div>'
     +'<div class="meta">Practice explains each answer as you go. Exam mode is timed and holds every explanation until the end.</div>'
-    +'<div class="sec">Past attempts</div>'+(hist.length
-      ? '<div class="stack">'+hist.map(a=>{
-          const sc=scoreOf(a), p=pct(sc,scorable(a));
-          return '<div class="card" data-att="'+esc(a.id)+'" role="button" tabindex="0"><div class="row">'
-            +'<div class="grow"><div class="ttl">'+sc+' / '+scorable(a)+' · '+p+'%</div>'
-            +'<div class="meta">'+fmt(a.finishedAt)+' · '+dur(a.elapsed)+(a.mode==="exam"?' · exam':'')+'</div></div>'
-            +'<span class="chip '+(p>=70?"ok":"no")+'">Review</span></div></div>';
-        }).join("")+'</div>'
+    +'<div class="sec">Attempt stack</div>'+(sessions.length
+      ? '<div class="card test-card'+(sessions.length>1?' layered':'')+'">'+attemptLayer(selectedSession(t,sessions))
+        +stackNav(t,sessions,selectedSession(t,sessions))+'</div>'
       : '<div class="empty">Not taken yet.</div>');
 }
 
@@ -969,7 +1096,7 @@ function quizChrome(a,stuck){
     +(a.i<(a.max||0)?'<button class="tiny" data-jump="1">Latest</button>':'')
     +(stuck?'<button class="tiny" data-next="1">Skip</button>':'')
     +'<button class="tiny" data-restart-ask="1">'+ICON.redo+' Restart</button>'
-    +'</div></div>';
+    +'</div></div>'+(restartCount(a)?'<div class="meta" role="status">Restart '+restartCount(a)+' · '+a.refs.length+' question'+(a.refs.length===1?'':'s')+' to review</div>':'');
 }
 
 function noteCard(a,q,r){
@@ -1157,16 +1284,19 @@ function ring(p){
 function results(){
   const a=rows().find(x=>x.id===view.id)||live;
   if(!a){ view={s:"home"}; return home(); }
-  const sc=scoreOf(a), p=pct(sc,scorable(a));
+  const sc=scoreOf(a), p=pct(sc,scorable(a)), original=firstRound(a), session=sessionFor(a);
   el.innerHTML='<button class="tiny" data-home="1">'+ICON.back+' Home</button>'
     +'<h1 style="font-size:25px;font-weight:800;letter-spacing:-.025em;margin:6px 0 0;text-wrap:balance">'+esc(a.title)+'</h1>'
+    +(session?'<div class="meta">'+session.label+'</div>':'')
+    +(session?.complete?'<div class="card complete-banner" style="margin-top:14px"><b>'+ICON.check+' Complete</b><div class="meta">All '+asks(test(a.testId))+' questions correct'+(isArch(a.testId)?' · Saved in Archived':'')+'</div></div>':'')
     +'<div class="score">'+ring(p)+'<div><b>'+sc+' / '+scorable(a)+'</b>'
     +'<div class="meta">'+p+'% · '+fmt(a.finishedAt||now())+' · '+dur(a.elapsed)
     +(a.mode==="exam"?' · exam mode':'')+'</div></div></div>'
-    +'<div class="sec">Every question</div><div class="stack">'
-    + a.refs.map((r,i)=>{
+    +(restartCount(a)?'<div class="card"><b>'+reviewSummary(a)+'</b><div class="meta">First-round score: '+sc+'/'+scorable(a)+'</div></div>':'')
+    +'<details class="fold"><summary>'+(restartCount(a)?'First-round answers':'Every question')+'</summary><div class="stack">'
+    + original.refs.map((r,i)=>{
         const q=qOf(r); if(!q||isNote(q)) return "";
-        const ok=right(q,a.answers[i]), pick=a.answers[i], k=kind(q);
+        const ok=right(q,original.answers[i]), pick=original.answers[i], k=kind(q);
         const show=v=>{
           if(v==null) return "skipped";
           if(k==="match") return v.pairs.length+" of "+q.pairs.length+" matched, "+v.misses+" wrong tries";
@@ -1177,21 +1307,27 @@ function results(){
           : k==="order" ? q.items.join(" → ") : show(q.correct);
         return '<div class="card"><div class="rev '+(ok?"ok":"no")+'">'
           +'<span class="chip '+(ok?"ok":"no")+'">'+(ok?"Right":"Wrong")+'</span>'
-          +'<div class="ttl" style="margin-top:7px;font-family:\'Georgia\',Georgia,serif;font-size:16px">'+esc(q.q)+'</div>'
+          +'<div class="ttl" style="margin-top:7px;font-family:\'Source Serif 4\',Georgia,serif;font-size:16px">'+esc(q.q)+'</div>'
           +'<div class="meta">You said: '+esc(show(pick))+'</div>'
-          +(ok?"":'<div class="meta" style="color:var(--good)">Answer: '+esc(show(q.correct))+'</div>')+'</div>'
+          +(ok?"":'<div class="meta" style="color:var(--good)">Answer: '+esc(answer())+'</div>')+'</div>'
           +whyHtml(q.why,true)
           +'<div>'+(q.tags||[]).map(t=>'<span class="tag">'+esc(t)+'</span>').join("")+'</div>'
           +'<div>'+noteBox(r,"Add a note")+'</div></div>';
-      }).join("")+'</div>'
-    +'<div class="dock"><div class="inner"><button class="btn pri wide" data-home="1">Done</button></div></div>';
+      }).join("")+'</div></details>'
+    +(restartCount(a)?'<details class="fold"><summary>Review rounds</summary><div class="stack">'+[...a.rounds.slice(1),a].map((r,i)=>'<div class="meta">Restart '+(i+1)+': '+roundScoreOf(r)+'/'+roundScorable(r)+' correct</div>').join('')+'</div></details>':'')
+    +'<div class="dock"><div class="inner">'+(a.mode==='practice'&&missedRefs(a).length&&!session?.complete?'<button class="btn pri wide" data-retry="'+esc(a.id)+'">Review missed questions · '+(session?session.remaining:missedRefs(a).length)+'</button>':'')+'<button class="btn wide" data-home="1">Done</button></div></div>';
 }
 
 function finish(){
+  if(!live||live.done)return;
   live.done=true; live.finishedAt=now();
   live.refs.forEach((r,i)=>{ const q=qOf(r); if(q&&!isNote(q)) grade(r,right(q,live.answers[i])); });
-  const id=live.id, sc=scoreOf(live), out=scorable(live);
-  saveLive(); saveSched(); live=null;
+  const id=live.id, sc=roundScoreOf(live), out=roundScorable(live);
+  const remaining=missedRefs(live);
+  if(live.mode==="practice"&&remaining.length&&remaining.length*5<originalTotal(live)){
+    continueReview(live); saveSched(); return;
+  }
+  saveLive(); saveSched(); archiveCompleted(); live=null;
   view={s:"results",id}; render();
   if(out>=4&&sc===out){                              // a clean sweep, and only a clean sweep
     setTimeout(()=>{ confetti(140); toast("Clean sweep — "+sc+"/"+out); },260);
@@ -1322,6 +1458,12 @@ function render(){
 function handle(b){
   syncElapsed();
   const d=b.dataset;
+  if(d.stackBack||d.stackForward){
+    const t=test(d.stackBack||d.stackForward);if(!t)return;
+    const sessions=testSessions(t), selected=selectedSession(t,sessions), i=sessions.indexOf(selected);
+    const next=sessions[i+(d.stackBack?-1:1)];if(next)stackPositions[t.id]=next.a.id;
+    return render();
+  }
   if(d.home!=null){ askDrop=null; view={s:"home"}; return render(); }
   if(d.view){ askDrop=null; view={s:d.view}; return render(); }
   if(d.archToggle!=null){ archOpen=!archOpen; return; }        // <details> handles itself
@@ -1332,13 +1474,23 @@ function handle(b){
     render(); return saveArch();
   }
   if(d.test){ view={s:"detail",id:d.test}; return render(); }
+  if(d.retry){
+    const a=rows().find(x=>x.id===d.retry);
+    if(a&&a.done){
+      const open=rows().find(x=>!x.done&&(x.testId||x.title)===(a.testId||a.title));
+      if(open){ live=open; view={s:"quiz"}; askRestart=false; render(); toast("Resumed your existing review"); }
+      else continueReview(a);
+    }
+    return;
+  }
   if(d.att){ view={s:"results",id:d.att}; return render(); }
   if(d.dropAsk){ askDrop=d.dropAsk; return render(); }
   if(d.dropCancel!=null){ askDrop=null; return render(); }
   if(d.dropDo){
     const a=attempts.find(x=>x.id===d.dropDo);
     // only an unfinished run may be discarded; the completed log stays append-only
-    if(a&&!a.done){ attempts.splice(attempts.indexOf(a),1); del("attempts/"+a.id); if(live===a) live=null; }
+    if(a&&!a.done){ if(restartCount(a)){ a.done=true; a.finishedAt=now(); put("attempts/"+a.id,a); }
+      else { attempts.splice(attempts.indexOf(a),1); del("attempts/"+a.id); } if(live===a) live=null; }
     askDrop=null; return render();
   }
   if(d.resume){ const a=rows().find(x=>x.id===d.resume); if(!a) return; askRestart=false; askDrop=null; live=a; view={s:"quiz"}; return render(); }
@@ -1361,7 +1513,7 @@ function handle(b){
   if(d.restartDo!=null){
     const a=live;
     a.answers=a.refs.map(()=>null); a.checked=a.refs.map(()=>false);
-    a.i=0; a.max=0; a.elapsed=0; a.startedAt=now();
+    a.i=0; a.max=0; if(!restartCount(a)){ a.elapsed=0; a.startedAt=now(); }
     askRestart=false; render(); return saveLive();
   }
   if(d.check!=null){ live.checked[live.i]=true; render(); return saveLive(); }
@@ -1455,7 +1607,7 @@ function copyOut(text,btn){
   }
 }
 
-const SEL="[data-home],[data-view],[data-test],[data-att],[data-resume],[data-review],[data-tag],"
+const SEL="[data-stack-back],[data-stack-forward],[data-retry],[data-home],[data-view],[data-test],[data-att],[data-resume],[data-review],[data-tag],"
   +"[data-practice],[data-exam],[data-pick],[data-check],[data-next],[data-flag],[data-exit],"
   +"[data-arch],[data-unarch],[data-arch-toggle],[data-match],[data-order],[data-unpick],"
   +"[data-back],[data-fwd],[data-jump],[data-restart-ask],[data-restart-do],[data-cancel],"
@@ -1609,7 +1761,7 @@ DrillRuntime.connect().then(async d=>{
     attempts=as.docs.map(clone).map(normalize).filter(Boolean);
     const ids=v=>(Array.isArray(v)?v:[]).filter(x=>typeof x==="string"&&x);
     if(fl.exists) flags=ids(clone(fl).list);
-    if(ar.exists) archived=ids(clone(ar).list);
+    if(ar.exists){ archived=ids(clone(ar).list); completedRuns=ids(clone(ar).completedRuns); }
     if(nt.exists){ const m=clone(nt).map;
       if(m&&typeof m==="object") for(const [k,v] of Object.entries(m))
         if(typeof v==="string"&&v.trim()) notes[k]=v; }
@@ -1618,6 +1770,7 @@ DrillRuntime.connect().then(async d=>{
         if(v&&Number.isFinite(v.box)&&Number.isFinite(v.due)) sched[k]=v; }
     if(cf.exists) carried=ids(clone(cf).list);
     carryForward();                    // must run after sched/notes/flags are in
+    archiveCompleted();
     if(view.s==="home"||view.s==="browse") render();
   }catch(e){DrillRuntime.fail(e);}
 }).catch(DrillRuntime.fail);

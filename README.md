@@ -8,7 +8,7 @@ Drill helps turn a set of lessons into practice you can return to. It explains a
 
 Choose a lesson and work through teaching cards and questions. Practice mode explains each answer as you go; exam mode holds feedback until the end. Drill keeps your attempts, notes and review schedule on your own computer. You can leave a session and resume it later.
 
-The included example teaches a fictional workshop's parcel process: Receive, Pack, Dispatch. One lesson file supplies the teaching card and four questions. Answering them correctly produces a 4/4 score, a saved attempt and scheduled review questions. The example demonstrates the app without using real course materials or learner records.
+The included example teaches a fictional workshop's parcel process: Receive, Pack, Dispatch. One lesson file supplies the teaching card and four questions. Answering them correctly produces a 4/4 score, a saved attempt and a green Complete card in Archived. The example demonstrates the app without using real course materials or learner records.
 
 ```mermaid
 flowchart LR
@@ -18,9 +18,23 @@ flowchart LR
     D --> B
 ```
 
+## Reviews and retakes
+
+When a practice round ends with fewer than 20% of the original scored questions still wrong or skipped, Drill automatically restarts those questions until they are correct. Larger remaining sets have a **Review missed questions** button. The original score and restart count stay with the same attempt. Exactly 20% does not auto-restart; exam mode keeps its results screen.
+
+A full retake adds a labeled layer above the original test card. Only one attempt face is visible at a time. Completed tests turn green and move to Archived; restoring a test or starting a new full retake brings it back into practice. Answer details and review rounds expand when needed.
+
+The four-question demo uses manual review for a single miss because 1/4 is 25%. The regression suite covers automatic repeats with larger fictional tests.
+
+### One stack per test
+
+The current interface keeps the original attempt beneath its retakes. Here the earlier attempt is complete after one review restart, while the newer retake remains available on the next face.
+
+<img src="examples/walkthrough-stack.png" alt="Green completed original attempt in a single two-attempt card stack, with Earlier and Newer controls" width="680">
+
 ## Visual walkthrough
 
-These screens follow the included fictional parcel lesson.
+These September 7 screens show the included fictional parcel lesson. The current version also groups retakes into a single layered card and highlights completed tests in green.
 
 ### Choose a lesson
 
@@ -36,7 +50,7 @@ Choose an answer to see why it works. Teaching cards explain the process first; 
 
 ### Finish and return later
 
-Four correct answers produce a 4/4 result. Drill saves the attempt and schedules the questions for review, so progress remains after you reload.
+Four correct answers produce a 4/4 result. Drill saves the attempt and moves the completed test to Archived, so progress remains after you reload. Restore it whenever you want another full retake.
 
 <img src="examples/walkthrough-results.png" alt="Completed fictional practice lesson with a 4/4 score" width="680">
 
@@ -72,9 +86,9 @@ python3 server.py --port 8766 --data Data/another-demo.sqlite3
 1. Open **Parcel flow at Cedar Workshop** and choose practice.
 2. Read the teaching card and reveal its answer. Teaching cards do not affect the score.
 3. Answer **Pack** for the first question; select **Receive the order** and **Pack the item** for the next question.
-4. Match each stage to its action, then order the stages **Receive → Pack → Dispatch**. Correct on the first try throughout produces **4/4**. After the brief counter animation finishes, Accuracy shows **100%**. Known remains **0/4** after this first success: a question must reach review box 2 to count as known.
-5. Return home. The attempt remains in the history. An intentionally missed question appears in the review queue; a correct answer advances its review schedule.
-6. Start an exam to see feedback deferred until results. Leave an unfinished run and resume it from home.
+4. Match each stage to its action, then order the stages **Receive → Pack → Dispatch**. Correct on the first try throughout produces **4/4**. The completed test moves to Archived. Archived questions leave the active review queue and Known denominator; restoring the test brings them back.
+5. Return home and open Archived to see the green **Complete** card. Restore the lesson to practice it again. Each full retake stacks above the original, with **Earlier** and **Newer** controls to flip between attempts.
+6. Open Test details and start an exam to see feedback deferred until results. Leave an unfinished run and resume it from home.
 7. Add a note or flag a card. Use **Save file** to download a schema-2 JSON backup. Restart the server: saved progress remains.
 
 Import is intended for an empty database. It refuses to overwrite existing study data. To demonstrate a restore, start a separate database with the command above and import your export there. These two databases do not synchronize.
@@ -84,7 +98,7 @@ Import is intended for an empty database. It refuses to overwrite existing study
 | Input | Expected output |
 | --- | --- |
 | `examples/lesson.json` | One five-card lesson: one unscored teaching card and four scored questions |
-| Correct answers in the walkthrough | Completed attempt scored 4/4; four scheduled review references |
+| Correct answers in the walkthrough | Completed attempt scored 4/4; green archived card; schedule retained for restoration |
 | Wrong answer | Explanation and a question due for review immediately |
 | Note or flag | Saved entry attached to the permanent test ID and card index |
 | Save file | `drill-state.json` containing schema version 2 and saved documents |
