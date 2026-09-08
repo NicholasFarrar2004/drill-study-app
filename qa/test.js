@@ -77,7 +77,7 @@ ok(sc["t1:1"].box===0&&sc["t1:1"].due<=Date.now(),"missed question due immediate
 
 click({home:"1"});
 ok(has("2 questions to review"),"both misses are due for review");
-ok(has("last score 1/3"),"home shows last score");
+ok(has("1/3 first pass"),"home shows last score");
 ok(has("alpha")&&has("beta"),"weak spots list missed tags");
 
 click({review:"1"});
@@ -87,11 +87,11 @@ click({pick:"3"}); click({next:"1"});
 ok(ctx.attempts().length===2,"second attempt logged separately");
 
 click({home:"1"});
-ok(has("Attempt log")&&(html.match(/data-att=/g)||[]).length===2,"both attempts in the log");
+ok(has("Original attempt")&&(html.match(/data-att=/g)||[]).length===2,"both attempts in the log");
 
 // resume: leave mid-test, come back
 click({practice:"t1"}); click({pick:"1"}); click({next:"1"}); click({exit:"1"});
-ok(has("Pick up where you left off")&&has("Question 2 of 3"),"resume offered at the right question");
+ok(has("In progress")&&has("Question 2 of 3"),"resume offered at the right question");
 const openA=ctx.attempts().find(a=>!a.done);
 click({resume:openA.id});
 ok(has("q1"),"resume lands on the right question");
@@ -153,7 +153,9 @@ ok(!has("A teaching card"),"note excluded from the graded review");
 ok(!ctx.sched()["t2:0"]&&ctx.sched()["t2:1"],"note excluded from the review schedule");
 click({home:"1"});
 ok(has("about t2")&&has("Newest"),"home shows the blurb and marks the newest test");
-ok(has("1 card"),"home counts explainer cards separately");
+ok(has("1 teaching card"),"home counts explainer cards separately");
+ok(ctx.archived().includes("t2"),"a clean full test is automatically archived");
+click({unarch:"t2"});
 ok(html.indexOf('data-test="t2"')<html.indexOf('data-test="t1"'),"tests are ordered newest first");
 
 // keyboard: letters pick, Enter advances, and neither may crash on a teaching card
@@ -230,7 +232,7 @@ ok(has("Archived · 1 test")&&has('data-unarch="t2"'),"archived drawer lists it 
 ok(!ctx.dueRefs().some(r=>r[0]==="t2"),"archived questions drop out of the review queue");
 const openT2=ctx.attempts().find(a=>a.testId==="t2"&&!a.done);
 ok(openT2,"there is an unfinished run on t2 to archive around");
-ok(!has('data-resume="'+openT2.id+'"'),"an unfinished run on an archived test drops off Pick up where you left off");
+ok(html.indexOf('data-resume="'+openT2.id+'"')>html.indexOf("Archived ·"),"an archived unfinished run is available only inside its archived stack");
 click({unarch:"t2"});
 ok(has('data-arch="t2"')&&!has("Archived ·"),"restoring puts it back");
 ok(ctx.attempts().includes(openT2)&&has('data-resume="'+openT2.id+'"'),

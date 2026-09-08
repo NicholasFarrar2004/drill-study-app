@@ -7,7 +7,7 @@ def run(*args):
     if result.returncode:
         print(result.stdout,result.stderr);raise SystemExit(result.returncode)
     return result.stdout+result.stderr
-for script in ('test.js','version-check.js'):
+for script in ('test.js','version-check.js','review-loop.js','completion-stack.js'):
     out=run('node','qa/'+script)
     print(script+': '+str(len(re.findall(r'^ok -',out,re.M)))+' assertions passed')
 print(run('node','qa/content-check.js','drill.html').strip())
