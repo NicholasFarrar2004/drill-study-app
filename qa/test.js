@@ -46,7 +46,6 @@ const has=s=>html.includes(s);
 const ok=(c,m)=>{ if(!c) throw new Error("FAIL: "+m); console.log("ok -",m); };
 
 ok(!ctx.figure({img:'data:image/webp;base64,x" onerror="alert(1)',alt:'demo'}).includes('src="data:image/webp;base64,x" onerror="'),'image source cannot escape its attribute');
-
 ok(has("Nothing due"),"home starts with nothing due");
 ok(has("not taken yet"),"test shows as not taken");
 
@@ -154,9 +153,9 @@ ok(!ctx.sched()["t2:0"]&&ctx.sched()["t2:1"],"note excluded from the review sche
 click({home:"1"});
 ok(has("about t2")&&has("Newest"),"home shows the blurb and marks the newest test");
 ok(has("1 teaching card"),"home counts explainer cards separately");
-ok(ctx.archived().includes("t2"),"a clean full test is automatically archived");
+ok(!ctx.archived().includes("t2")&&has("Completed ·"),"a clean full test moves to Completed without auto-archive");
 click({unarch:"t2"});
-ok(html.indexOf('data-test="t2"')<html.indexOf('data-test="t1"'),"tests are ordered newest first");
+ok(html.indexOf('data-test="t2"')>html.indexOf('Completed ·'),"completed tests are in their own section");
 
 // keyboard: letters pick, Enter advances, and neither may crash on a teaching card
 // a real document fires EVERY keydown listener, not just the last one registered

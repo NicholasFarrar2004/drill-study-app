@@ -47,7 +47,7 @@ check(c.testSessions(c.test('t1'))[0].remaining===1,'legacy subset review resolv
 const last=add(record('last',[[0,2]],140,{testId:null,refs:[['t1',1]],checked:[true],i:0,max:0}));
 const before=JSON.stringify(c.attempts());c.archiveCompleted();
 check(c.testSessions(c.test('t1'))[0].complete,'exact legacy review chain completes the full test');
-check(c.archived().includes('t1'),'completed legacy test moves to archive');
+check(!c.archived().includes('t1'),'completed legacy test stays out of manual archive');
 check(JSON.stringify(c.attempts())===before,'recognizing old completion never rewrites attempts');
 check(c.completed().length===1,'one archive marker per completed full attempt');
 click({unarch:'t1'});c.archiveCompleted();check(!c.archived().includes('t1'),'manual restore survives repeat completion check');
@@ -68,7 +68,7 @@ check(c.testSessions(c.test('t1')).at(-1).label==='Retake 2','new full retake is
 check(!c.archived().includes('t1'),'starting a retake makes the test active');
 a.answers=[1,null,null];a.checked=[true,true,true];a.i=a.max=2;c.finish();
 c.continueReview(a);a.answers=[[0,2],3];a.checked=[true,true];a.i=a.max=1;c.finish();
-check(c.sessionFor(a).complete&&c.archived().includes('t1'),'finishing a full test review loop completes and archives it');
+check(c.sessionFor(a).complete&&!c.archived().includes('t1'),'finishing a full test review loop completes without archiving it');
 check(c.scoreOf(a)===1&&c.scorable(a)===3&&c.restartCount(a)===1,'completion preserves first score and restart count');
 check(c.testSessions(c.test('t1')).length===3,'review restart does not add a retake card');
 click({home:'1'});check((html.match(/aria-label="T1"/g)||[]).length===1,'home contains exactly one test card for all retakes');
@@ -92,5 +92,5 @@ check(savedDocs.completed[0]===marker[0]&&!savedDocs.archived.length,'restore pr
 c.reset();const legacyRoot=add(record('legacy-root',[1,null,null]));add(record('legacy-review',[3],120,{testId:null,refs:[['t1',2]],checked:[true],i:0,max:0}));
 c.continueReview(legacyRoot);check(legacyRoot.refs.length===1&&legacyRoot.refs[0][1]===1,'continuing an older partial chain repeats only the unresolved question');
 legacyRoot.answers=[[0,2]];legacyRoot.checked=[true];legacyRoot.i=legacyRoot.max=0;c.finish();
-check(c.sessionFor(legacyRoot).complete&&c.archived().includes('t1'),'legacy review evidence survives continuation and permits completion');
+check(c.sessionFor(legacyRoot).complete&&!c.archived().includes('t1'),'legacy review evidence survives continuation and permits completion');
 console.log(count+' completion-stack checks passed');process.exit(0);
