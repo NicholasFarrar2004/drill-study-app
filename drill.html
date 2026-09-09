@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Drill</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
 <style>
 :root{
   --bg:#F0F1F4; --surface:#FFFFFF; --sunken:#E6E8EE;
@@ -33,7 +34,7 @@
 
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);
-  font:400 16px/1.55 "Arial","Avenir Next",-apple-system,Segoe UI,sans-serif;
+  font:400 16px/1.55 "Bricolage Grotesque","Avenir Next",-apple-system,Segoe UI,sans-serif;
   -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
 #app{max-width:540px;margin:0 auto;padding:20px 16px 120px}
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
@@ -159,7 +160,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 .segs>i.done{background:var(--accent)}
 .segs>i.now{background:var(--accent);opacity:.45}
 .clock{font-size:13px;font-weight:700;color:var(--muted);min-width:52px;text-align:right}
-.stem{font-family:"Georgia",Georgia,serif;font-size:21px;line-height:1.4;
+.stem{font-family:"Source Serif 4",Georgia,serif;font-size:21px;line-height:1.4;
   font-weight:600;letter-spacing:-.005em;text-wrap:pretty;margin:14px 0 6px}
 .hint{font-size:13px;font-weight:600;color:var(--muted);margin-bottom:12px}
 .navrow{align-items:flex-start;gap:8px;margin-top:2px}
@@ -203,9 +204,9 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 /* teaching card - shown between clusters of questions */
 .note{background:var(--accent-soft);border:1px solid var(--accent);border-radius:var(--r);
   padding:16px;margin:14px 0}
-.note h3{font-family:"Georgia",Georgia,serif;font-size:20px;font-weight:600;
+.note h3{font-family:"Source Serif 4",Georgia,serif;font-size:20px;font-weight:600;
   letter-spacing:-.01em;margin:0 0 8px;text-wrap:balance}
-.note p{font-family:"Georgia",Georgia,serif;font-size:16px;line-height:1.55;margin:0 0 10px}
+.note p{font-family:"Source Serif 4",Georgia,serif;font-size:16px;line-height:1.55;margin:0 0 10px}
 .note p:last-child{margin-bottom:0}
 .eyebrow{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
   color:var(--accent);margin-bottom:8px}
@@ -243,7 +244,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 .dock.no{background:var(--bad-soft);border-top-color:var(--bad)}
 .verdict{display:flex;align-items:center;gap:9px;font-weight:800;font-size:16px}
 .dock.ok .verdict{color:var(--good)} .dock.no .verdict{color:var(--bad)}
-.why{font-family:"Georgia",Georgia,serif;font-size:15px;line-height:1.5;color:var(--muted)}
+.why{font-family:"Source Serif 4",Georgia,serif;font-size:15px;line-height:1.5;color:var(--muted)}
 .why.sm{font-size:13.5px}
 /* the one sentence worth carrying out of the card */
 .keeper{font-size:16.5px;font-weight:700;line-height:1.4;letter-spacing:-.011em;color:var(--ink);
@@ -366,7 +367,7 @@ html.swap *{transition:none!important}
 /* tap-to-reveal inside a teaching card: predict, then look */
 .rv{margin-top:14px;padding-top:13px;border-top:1px dashed var(--accent)}
 .rvq{font-size:14px;font-weight:700;letter-spacing:-.005em;margin-bottom:9px}
-.rva{font-family:"Georgia",Georgia,serif;font-size:16px;line-height:1.55;
+.rva{font-family:"Source Serif 4",Georgia,serif;font-size:16px;line-height:1.55;
   background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 13px;
   animation:inUp .24s cubic-bezier(.22,.9,.3,1)}
 
@@ -378,13 +379,89 @@ html.swap *{transition:none!important}
 .note-line{font-size:13px;color:var(--amber);background:var(--amber-soft);
   border-radius:8px;padding:7px 10px;margin-top:2px}
 .src-line{font-size:12.5px;color:var(--muted);margin-top:2px}
+/* A quick reference sheet, outside the animated question and fixed answer dock. */
+#wordbank[hidden],#wordbank-panel[hidden]{display:none!important}
+.wb-toggle{position:fixed;right:24px;top:102px;z-index:35;display:flex;align-items:center;gap:9px;padding:12px 16px;border:1px solid var(--line-str);border-radius:16px;background:var(--surface);box-shadow:var(--shadow);font-size:14px;font-weight:700;transition:transform .18s,background .18s}
+.wb-toggle:hover{transform:translateY(-2px);background:var(--accent-soft)}
+.wb-toggle[aria-expanded="true"]{background:var(--accent-soft);color:var(--accent)}
+.wb-panel{position:fixed;right:24px;top:160px;width:min(340px,calc((100vw - 540px)/2 - 40px));max-width:calc(100vw - 32px);max-height:calc(100dvh - 188px);z-index:40;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line-str);border-radius:22px;box-shadow:0 16px 64px -16px #0005,0 2px 8px #0001;opacity:0;transform:translateX(18px) translateY(-6px) scale(.975);transform-origin:top right;transition:opacity .2s ease,transform .24s cubic-bezier(.2,.8,.2,1);overflow:hidden}
+.wb-panel.is-open{opacity:1;transform:none}
+.wb-head{padding:20px 20px 12px;flex-shrink:0}
+.wb-title-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.wb-title-row h2{font-size:20px;letter-spacing:-.03em;margin:0}
+.wb-close{border-radius:50%;width:32px;height:32px;background:var(--sunken);font-size:20px;line-height:1}
+.wb-subtitle{font-size:13px;color:var(--muted);margin:6px 0 14px;line-height:1.4}
+.wb-search{font:inherit;font-size:16px;width:100%;min-width:0;background:var(--sunken);color:var(--ink);border:1px solid transparent;border-radius:12px;padding:10px 12px}
+.wb-count{color:var(--muted);font-size:12px;margin-top:8px}
+.wb-list{padding:0 20px 20px;overflow-y:auto;overscroll-behavior:contain;min-height:0}
+.wb-section{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:14px 0 4px}
+.wb-entry{padding:13px 0;border-bottom:1px solid var(--line)}
+.wb-entry:last-child{border-bottom:0}
+.wb-entry h4{font-size:16px;line-height:1.35;margin:0 0 6px;color:var(--accent)}
+.wb-entry p{font-family:'Source Serif 4',Georgia,serif;font-size:16px;line-height:1.6;margin:0}
+.wb-empty{font-size:15px;color:var(--muted)}
+.retry-invite{border-color:var(--accent);background:var(--accent-soft);margin:18px 0}
+.retry-invite h2{font-size:20px;margin:0 0 6px}
+.retry-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+@media(max-width:1100px){.wb-toggle{top:auto;bottom:24px;right:16px}.wb-panel{width:340px;top:100px;right:16px;max-height:calc(100dvh - 180px)}}
+@media(max-width:700px){.wb-toggle{top:8px;bottom:auto;right:10px;padding:9px 12px;border-radius:12px;font-size:13px}.wb-panel{top:auto;bottom:0;left:8px;right:8px;width:auto;max-width:none;max-height:58dvh;border-radius:22px 22px 0 0;transform:translateY(24px);transform-origin:bottom center;padding-bottom:env(safe-area-inset-bottom)}.wb-head{padding:16px 18px 10px}.wb-list{padding:0 18px 20px}body:has(#wordbank:not([hidden])) #app{padding-top:60px}}
+@media(prefers-reduced-motion:reduce){.wb-panel,.wb-toggle{transition:none;transform:none}}
+
+/* A quiet course library and expandable reference sheets. */
+.wb-relevant{background:color-mix(in srgb,var(--accent-soft) 75%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 20%,var(--line));border-radius:16px;padding:4px 12px 8px;margin:4px -8px 16px}
+.wb-relevant .wb-section{color:var(--accent)}
+.term-entry>summary{list-style:none;cursor:pointer;display:block;padding:0;border:0;border-radius:10px}
+.term-entry>summary::-webkit-details-marker{display:none}
+.term-title{display:flex;justify-content:space-between;gap:12px;color:var(--accent);font-size:16px;font-weight:700;line-height:1.4}
+.term-chevron{font-size:20px;transition:transform .22s ease;flex-shrink:0}
+.term-entry[open] .term-chevron{transform:rotate(180deg)}
+.term-definition{display:block;font-family:'Source Serif 4',Georgia,serif;font-size:16px;line-height:1.6;margin-top:6px}
+.term-expand-hint{display:block;font-size:12px;color:var(--muted);margin-top:6px}
+.term-entry[open] .term-expand-hint{display:none}
+.term-entry{scroll-margin-top:20px}
+.term-extra{padding-top:12px;animation:term-unfold .24s cubic-bezier(.2,.8,.2,1)}
+@keyframes term-unfold{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:none}}
+@supports(interpolate-size:allow-keywords){.term-entry{interpolate-size:allow-keywords}.term-entry::details-content{block-size:0;overflow:clip;transition:block-size .25s cubic-bezier(.2,.8,.2,1),content-visibility .25s allow-discrete}.term-entry[open]::details-content{block-size:auto}}
+.term-visual{margin:0;padding:14px;border-radius:14px;background:var(--sunken);border:1px solid var(--line);color:var(--ink)}
+.term-visual figcaption{font-size:14px;font-weight:700;margin-bottom:12px}
+.term-visual-grid{display:grid;gap:8px}
+.term-step{padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;min-width:0}
+.term-step span{display:block;font-size:12px;color:var(--muted)}
+.term-step strong{display:block;font-size:15px;font-weight:700;overflow-wrap:anywhere;line-height:1.45}
+.term-visual-grid.flow{gap:20px}.flow .term-step{position:relative}.flow .term-step:not(:last-child)::after{content:'↓';position:absolute;bottom:-23px;left:calc(50% - 5px);color:var(--accent);font-size:16px}
+.term-visual .term-visual-note{font-family:inherit;font-size:14px;line-height:1.55;margin:12px 0 0;color:var(--muted)}
+.terms-panel{margin-top:22px;padding:24px;border:1px solid var(--line);border-radius:24px;background:var(--surface);box-shadow:var(--shadow)}
+.terms-eyebrow{font-size:12px;letter-spacing:.1em;color:var(--muted);font-weight:700}
+.terms-heading h1{font-size:36px;letter-spacing:-.04em;line-height:1.1;margin:8px 0}
+.terms-heading p{font-size:15px;color:var(--muted);margin:0 0 24px}
+.terms-search-label{display:block;font-size:14px;font-weight:700;margin-bottom:8px}
+.course-filters{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}
+.course-filter{font-size:13px;border-radius:10px;padding:8px 11px;transition:background .18s,color .18s;min-height:36px}
+.course-filter:hover{background:var(--sunken)}.course-filter.selected{color:var(--accent);background:var(--accent-soft);font-weight:700}
+.course-term-heading{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:28px 0 8px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.course-term-heading h2{font-size:19px;margin:0}.course-term-heading>span{font-size:13px;color:var(--muted)}
+.course-term-list>.term-entry{padding:16px 0}
+#terms-results{animation:term-unfold .22s ease}
+.notes-fold{margin-top:28px}.notes-fold>summary{font-size:15px;font-weight:700;color:var(--muted);padding:12px 0;cursor:pointer}.notes-fold>.card{margin-top:8px}
+.completed-section{margin-top:24px;border:1px solid var(--line);border-radius:18px;padding:0 14px;background:var(--surface)}
+.completed-section>summary{padding:14px 0;font-size:15px;font-weight:700;cursor:pointer;color:var(--good)}
+.completed-section>.stack{padding-bottom:14px}
+@media(min-width:700px){.terms-panel .term-visual-grid:not(.flow){grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:500px){.switch button{padding:8px 10px}.terms-panel{padding:18px 16px;border-radius:20px}.terms-heading h1{font-size:31px}}
+@media(prefers-reduced-motion:reduce){.term-extra,#terms-results{animation:none}.term-chevron,.course-filter,.term-entry::details-content{transition:none}}
+
 </style>
 </head><body>
 <div id="app"></div>
 <div id="dockhost"></div>
+<aside id="wordbank" hidden aria-label="Test reference">
+<button id="wordbank-toggle" class="wb-toggle" data-wordbank="1" aria-expanded="false" aria-controls="wordbank-panel"><span aria-hidden="true">▤</span> Word bank</button>
+<section id="wordbank-panel" class="wb-panel" hidden inert aria-hidden="true" aria-labelledby="wordbank-title">
+<div class="wb-head"><div class="wb-title-row"><h2 id="wordbank-title">Word bank</h2><button class="wb-close" data-wordbank-close="1" aria-label="Close word bank">×</button></div><p id="wordbank-subtitle" class="wb-subtitle"></p><input id="wordbank-search" class="wb-search" type="search" aria-label="Search terms and definitions" placeholder="Find a term or idea…" autocomplete="off"><div id="wordbank-count" class="wb-count" role="status" aria-live="polite"></div></div>
+<div id="wordbank-list" class="wb-list" tabindex="0" aria-label="Definitions"></div></section></aside>
 <script src="runtime.js"></script>
 <script>
-// ── TESTS: appended by the `drill` skill from structured lesson JSON. Do not edit by hand. ──
+// ── TESTS: appended by the `drill` skill from Cowork chat. Do not edit by hand. ──
 // {id, title, course, unit, questions:[{q, options[], correct: idx | [idx,...], why, tags[]}]}
 const IMG={};
 const TESTS = [
@@ -477,6 +554,172 @@ const REVIEW_MAX=15;
 const DAY=864e5;
 const LETTERS=["A","B","C","D","E","F"];
 
+const COURSE_GLOSSARIES = {
+  "Fictional Operations": [
+    {
+      "id": "receive",
+      "term": "Receive",
+      "definition": "Record an incoming order before preparing its parcel.",
+      "aliases": [],
+      "visual": {
+        "kind": "flow",
+        "title": "Receive in the workshop",
+        "steps": [
+          {
+            "label": "Input",
+            "value": "Order arrives"
+          },
+          {
+            "label": "Action",
+            "value": "Record item and destination"
+          },
+          {
+            "label": "Output",
+            "value": "Order ready to pack"
+          }
+        ],
+        "note": "This example describes a fictional workshop."
+      }
+    },
+    {
+      "id": "pack",
+      "term": "Pack",
+      "definition": "Protect the item for transport.",
+      "aliases": [],
+      "visual": {
+        "kind": "flow",
+        "title": "Pack in the workshop",
+        "steps": [
+          {
+            "label": "Input",
+            "value": "Item and packaging"
+          },
+          {
+            "label": "Action",
+            "value": "Cushion and secure the item"
+          },
+          {
+            "label": "Output",
+            "value": "Protected parcel"
+          }
+        ],
+        "note": "This example describes a fictional workshop."
+      }
+    },
+    {
+      "id": "dispatch",
+      "term": "Dispatch",
+      "definition": "Hand the prepared parcel to a courier.",
+      "aliases": [],
+      "visual": {
+        "kind": "flow",
+        "title": "Dispatch in the workshop",
+        "steps": [
+          {
+            "label": "Input",
+            "value": "Prepared parcel"
+          },
+          {
+            "label": "Action",
+            "value": "Courier handoff"
+          },
+          {
+            "label": "Output",
+            "value": "Parcel leaves the workshop"
+          }
+        ],
+        "note": "This example describes a fictional workshop."
+      }
+    },
+    {
+      "id": "workflow",
+      "term": "Workflow",
+      "definition": "A sequence of actions that turns an input into an output.",
+      "aliases": [],
+      "visual": {
+        "kind": "flow",
+        "title": "Workflow in the workshop",
+        "steps": [
+          {
+            "label": "Input",
+            "value": "New order"
+          },
+          {
+            "label": "Process",
+            "value": "Receive \u2192 Pack \u2192 Dispatch"
+          },
+          {
+            "label": "Output",
+            "value": "Parcel with courier"
+          }
+        ],
+        "note": "This example describes a fictional workshop."
+      }
+    },
+    {
+      "id": "crate",
+      "term": "Crate",
+      "definition": "A container counted as one unit when tracking arrivals.",
+      "aliases": [],
+      "visual": {
+        "kind": "flow",
+        "title": "Crate in the workshop",
+        "steps": [
+          {
+            "label": "First delivery",
+            "value": "2 crates"
+          },
+          {
+            "label": "Second delivery",
+            "value": "1 crate"
+          },
+          {
+            "label": "Total received",
+            "value": "3 crates"
+          }
+        ],
+        "note": "This example describes a fictional workshop."
+      }
+    }
+  ]
+};
+const TEST_TERM_REFS = {
+  "demo-parcel-flow": {
+    "receive": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "pack": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "dispatch": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "workflow": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ]
+  },
+  "demo-check-count": {
+    "crate": [
+      0
+    ]
+  }
+};
 let db=null, view={s:"home"}, tick=null, tStart=0;
 let attempts=[], live=null, sched={}, flags=[], archived=[], completedRuns=[];  // live = the attempt being taken
 let browseCourse="All", archOpen=false, askRestart=false, navDir=0;  // survive re-renders
@@ -576,7 +819,7 @@ const saveLive=()=>live&&put("attempts/"+live.id,live);
 const saveSched=()=>put("state/sched",{q:sched});
 const saveFlags=()=>put("state/flags",{list:flags});
 const saveNotes=()=>put("state/notes",{map:notes});
-const saveArch=()=>put("state/archive",{list:archived,completedRuns});
+const saveArch=()=>put("state/archive",{list:archived,completedRuns,archiveVersion:2});
 const saveCarried=()=>put("state/carried",{list:carried});
 const syncElapsed=()=>{ if(live&&view.s==="quiz"&&tStart){ live.elapsed+=now()-tStart; tStart=now(); } };
 
@@ -613,7 +856,7 @@ function chainOf(t){                    // oldest .. newest, ending at t
   }
   return out;
 }
-const activeTests=()=>TESTS.filter(t=>!isArch(t.id)&&!isOld(t.id));
+const activeTests=()=>TESTS.filter(t=>!isArch(t.id)&&!isOld(t.id)&&!testComplete(t));
 
 // ── overlap ────────────────────────────────────────────────────────────────────
 // Two tests in the same class that ask the same question. Exact stems only, so this
@@ -726,13 +969,108 @@ function start(title,refs,mode,testId){
 }
 const refsOf=t=>t.questions.map((_,i)=>[t.id,i]);
 
+// Word banks are lesson content, separate from saved answers and study history.
+let wordBankOpen=false, wordBankQuery='', wordBankContext='', wordBankTimer=null;
+function wordBankAttempt(){
+  if(view.s==='quiz'&&live?.mode==='practice')return live;
+  if(view.s==='results'){const a=rows().find(x=>x.id===view.id)||live;return a?.mode==='practice'?a:null;}
+  return null;
+}
+function closeWordBank(restore=true){
+  wordBankOpen=false;
+  const panel=document.getElementById('wordbank-panel'),button=document.getElementById('wordbank-toggle');
+  if(!panel)return;
+  panel.classList.remove('is-open');panel.inert=true;panel.setAttribute('aria-hidden','true');button?.setAttribute('aria-expanded','false');
+  clearTimeout(wordBankTimer);wordBankTimer=setTimeout(()=>{if(!wordBankOpen)panel.hidden=true;},240);
+  if(restore)button?.focus({preventScroll:true});
+}
+function toggleWordBank(){
+  if(wordBankOpen)return closeWordBank();
+  if(!wordBankAttempt())return;
+  const panel=document.getElementById('wordbank-panel');if(!panel)return;
+  clearTimeout(wordBankTimer);wordBankOpen=true;panel.hidden=false;panel.inert=false;panel.removeAttribute('aria-hidden');
+  void panel.offsetWidth;panel.classList.add('is-open');document.getElementById('wordbank-toggle')?.setAttribute('aria-expanded','true');
+  wordBankList();document.getElementById('wordbank-search')?.focus({preventScroll:true});
+}
+function syncWordBank(){
+  const host=document.getElementById('wordbank');if(!host)return;
+  const a=wordBankAttempt();
+  if(!a){closeWordBank(false);host.hidden=true;return;}
+  host.hidden=false;
+  const context=a.testId||a.id;
+  if(context!==wordBankContext){wordBankContext=context;wordBankQuery='';const input=document.getElementById('wordbank-search');if(input)input.value='';}
+  const title=document.getElementById('wordbank-subtitle');if(title)title.textContent=[...new Set(wordBankEntries(a).map(e=>e.course))].join(' + ')+' · Course glossary';
+  if(wordBankOpen)wordBankList();
+}
+document.addEventListener('input',e=>{if(e.target?.id==='wordbank-search'){wordBankQuery=e.target.value;wordBankList();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&wordBankOpen){e.preventDefault();closeWordBank();}});
+
+
+const courseKey=t=>String(t?.course||'').match(/\b[A-Z]{4}\d{3}\b/i)?.[0]?.toUpperCase()||String(t?.course||'');
+let termsQuery='',termsCourse='All',expandedTerms=new Set(),completedOpen=true;
+let notesExpanded=true;try{notesExpanded=localStorage.getItem('drill.notesExpanded')!=='false';}catch{}
+function courseEntries(course){return COURSE_GLOSSARIES[course]||[];}
+function searchTerms(entries,query){
+  const words=String(query).normalize('NFKD').toLowerCase().trim().split(/\s+/).filter(Boolean);
+  return entries.filter(e=>{const text=[e.term,e.definition,...(e.aliases||[]),e.visual?.title,e.visual?.note,...(e.visual?.steps||[]).flatMap(s=>[s.label,s.value])].join(' ').normalize('NFKD').toLowerCase();return words.every(w=>text.includes(w));});
+}
+function termVisual(e){
+  const v=e.visual;if(!v)return '';
+  return '<figure class="term-visual"><figcaption>'+esc(v.title)+'</figcaption><div class="term-visual-grid '+(v.kind==='flow'?'flow':'')+'">'
+    +(v.steps||[]).map(s=>'<div class="term-step"><span>'+esc(s.label)+'</span><strong>'+esc(s.value)+'</strong></div>').join('')
+    +'</div><p class="term-visual-note">'+esc(v.note||'')+'</p></figure>';
+}
+function termEntry(e,course){
+  const key=course+':'+e.id;
+  return '<details class="wb-entry term-entry" data-term-key="'+esc(key)+'"'+(expandedTerms.has(key)?' open':'')+'><summary><span class="term-title"><span>'+esc(e.term)+'</span><span class="term-chevron" aria-hidden="true">⌄</span></span><span class="term-definition">'+esc(e.definition)+'</span><span class="term-expand-hint">Visual explanation</span></summary><div class="term-extra">'+termVisual(e)+'</div></details>';
+}
+function wordBankEntries(a){
+  if(!a)return [];
+  const testIds=[...new Set((a.testId?[[a.testId]]:firstRound(a).refs).map(r=>r[0]))];
+  const courses=[...new Set(testIds.map(id=>courseKey(test(id))))];
+  return courses.flatMap(course=>courseEntries(course).map(entry=>({...entry,course,refs:TESTS.filter(t=>courseKey(t)===course).flatMap(t=>(t.termRefs||TEST_TERM_REFS[t.id]||{})[entry.id]?.map(i=>[t.id,i])||[])})));
+}
+function wordBankList(){
+  const a=wordBankAttempt(),list=document.getElementById('wordbank-list');if(!list)return;
+  const current=view.s==='quiz'?a?.refs[a.i]:null,entries=searchTerms(wordBankEntries(a),wordBankQuery);
+  const related=e=>current&&e.refs.some(r=>r[0]===current[0]&&r[1]===current[1]);
+  const near=entries.filter(related),rest=entries.filter(e=>!related(e));
+  const section=(label,items,shade=false)=>items.length?'<section class="wb-group'+(shade?' wb-relevant':'')+'"><h3 class="wb-section">'+label+'</h3>'+items.map(e=>termEntry(e,e.course)).join('')+'</section>':'';
+  const groups=[...new Set(rest.map(e=>e.course))];
+  list.innerHTML=section('On this card',near,true)+groups.map(c=>section(c+' · '+(near.length?'More course terms':'All course terms'),rest.filter(e=>e.course===c))).join('')||'<p class="wb-empty">No matching terms. Try a shorter word.</p>';
+  const count=document.getElementById('wordbank-count');if(count)count.textContent=entries.length+' '+(entries.length===1?'term':'terms')+' · search the whole course';
+}
+function termsResults(){
+  const target=document.getElementById('terms-results');if(!target)return;
+  const courses=Object.keys(COURSE_GLOSSARIES).sort().filter(c=>termsCourse==='All'||termsCourse===c);let count=0;
+  target.innerHTML=courses.map(course=>{
+    const entries=searchTerms(courseEntries(course),termsQuery);count+=entries.length;if(!entries.length)return '';
+    return '<section class="course-term-group" aria-label="'+esc(course)+' terms"><div class="course-term-heading"><h2>'+esc(course)+'</h2><span>'+entries.length+' '+(entries.length===1?'term':'terms')+'</span></div><div class="course-term-list">'+entries.map(e=>termEntry(e,course)).join('')+'</div></section>';
+  }).join('')||'<div class="empty">No terms match this search. Try another word or course.</div>';
+  const status=document.getElementById('terms-count');if(status)status.textContent=count+' '+(count===1?'term':'terms');
+}
+function terms(){
+  el.innerHTML='<div class="row"><button class="wordmark" data-mark="1" aria-label="Drill">'+ICON.mark+'Drill</button>'+switcher('terms')+'</div>'
+    +'<section class="terms-panel"><div class="terms-heading"><span class="terms-eyebrow">YOUR COURSE LIBRARY</span><h1>Terms</h1><p>One place for the ideas you’re learning.</p></div>'
+    +'<label class="terms-search-label" for="terms-search">Search terms, definitions and examples</label><input id="terms-search" class="wb-search" type="search" placeholder="Find a term or idea…" value="'+esc(termsQuery)+'" autocomplete="off">'
+    +'<div class="course-filters" role="group" aria-label="Filter terms by course">'+['All',...Object.keys(COURSE_GLOSSARIES).sort()].map(c=>'<button data-terms-course="'+esc(c)+'" aria-pressed="'+(termsCourse===c)+'" class="course-filter'+(termsCourse===c?' selected':'')+'">'+esc(c==='All'?'All courses':c)+'</button>').join('')+'</div>'
+    +'<div id="terms-count" class="meta" role="status" aria-live="polite"></div><div id="terms-results"></div></section>';
+  termsResults();
+}
+document.addEventListener('input',e=>{if(e.target?.id==='terms-search'){termsQuery=e.target.value;termsResults();}});
+document.addEventListener('toggle',e=>{
+  const key=e.target?.dataset?.termKey;if(key){e.target.open?expandedTerms.add(key):expandedTerms.delete(key);}
+  if(e.target?.id==='your-notes'){notesExpanded=e.target.open;try{localStorage.setItem('drill.notesExpanded',String(notesExpanded));}catch{}}
+  if(e.target?.id==='completed-tests')completedOpen=e.target.open;
+},true);
+
 // ── screens ────────────────────────────────────────────────────────────────────
 const progress=(i,n)=> n>12
   ? '<div class="segs solid"><i style="width:'+pct(i,n)+'%"></i></div>'
   : '<div class="segs">'+Array.from({length:n},(_,k)=>
       '<i class="'+(k<i?"done":k===i?"now":"")+'"></i>').join("")+'</div>';
 const figure=q=>q.img
-  ? '<figure class="fig"><img src="'+esc(q.img)+'" alt="'+esc(q.alt||"Lesson illustration")+'">'
+  ? '<figure class="fig"><img src="'+esc(q.img)+'" alt="'+esc(q.alt||"Figure from the course material")+'">'
     +'<div class="zoomhint">Tap the figure to enlarge</div>'
     +(q.caption?'<figcaption>'+esc(q.caption)+'</figcaption>':'')+'</figure>'
   : '';
@@ -777,12 +1115,26 @@ function testSessions(t){
   });
 }
 function sessionFor(a){const t=test(a.testId);return t?testSessions(t).find(s=>s.a.id===a.id):null;}
+function testComplete(t){const sessions=testSessions(t);return !!sessions[sessions.length-1]?.complete;}
+function archiveIdsFor(data){
+  const list=Array.isArray(data?.list)?data.list.filter(x=>typeof x==='string'):[];
+  if(data?.archiveVersion===2)return list;
+  const automatic=new Set(Array.isArray(data?.completedRuns)?data.completedRuns:[]);
+  // Legacy automatic completions used the same list as Archive. Interpret those
+  // markers as Completed; do not delete or rewrite the user's stored documents.
+  return list.filter(id=>{const t=test(id);return !t||!testSessions(t).some(s=>automatic.has(s.a.id));});
+}
+function completedBlock(){
+  const list=TESTS.filter(t=>!isArch(t.id)&&testComplete(t)&&(view.s!=='browse'||browseCourse==='All'||t.course===browseCourse));
+  if(!list.length)return '';
+  return '<details id="completed-tests" class="completed-section"'+(completedOpen?' open':'')+'><summary>Completed · '+list.length+' tests</summary>'+testList(list)+'</details>';
+}
 function archiveCompleted(){
   let changed=false;
   for(const t of TESTS){
     const sessions=testSessions(t), latest=sessions[sessions.length-1];
     if(!latest?.complete||completedRuns.includes(latest.a.id))continue;
-    completedRuns.push(latest.a.id);if(!isArch(t.id))archived.push(t.id);changed=true;
+    completedRuns.push(latest.a.id);changed=true;
   }
   if(changed)saveArch();
 }
@@ -874,7 +1226,7 @@ function testList(list,emptyMsg,stampNewest){
 }
 
 function archiveBlock(){
-  const list=TESTS.filter(t=>isArch(t.id));
+  const list=TESTS.filter(t=>isArch(t.id)&&(view.s!=='browse'||browseCourse==='All'||t.course===browseCourse));
   if(!list.length) return '';
   return '<details class="arch"'+(archOpen?' open':'')+'><summary data-arch-toggle="1">Archived · '
     +list.length+' test'+(list.length>1?'s':'')+'</summary><div class="archbody">'
@@ -884,7 +1236,8 @@ function archiveBlock(){
 function switcher(active){
   return '<div class="switch">'
     +'<button data-view="home"'+(active==="home"?' class="on"':'')+'>Today</button>'
-    +'<button data-view="browse"'+(active==="browse"?' class="on"':'')+'>Browse</button></div>';
+    +'<button data-view="browse"'+(active==="browse"?' class="on"':'')+'>Browse</button>'
+    +'<button data-view="terms"'+(active==="terms"?' class="on"':'')+'>Terms</button></div>';
 }
 
 function browse(){
@@ -903,10 +1256,10 @@ function browse(){
     +'<div class="meta" style="margin:12px 0 10px">'+shown.length+' test'+(shown.length===1?'':'s')
       +' · newest first</div>'
     +testList(shown, browseCourse==="All"
-        ? (archived.length?"Every test is archived. Open the drawer below to bring one back."
-                          :"No tests yet. Add a lesson using the documented JSON example.")
+        ? (archived.length?"No active tests. Find completed or archived tests below."
+                          :"No active tests. Ask ChatGPT for a new practice test.")
         : "Nothing active for "+browseCourse+" right now.", true)
-    +archiveBlock();
+    +completedBlock()+archiveBlock();
 }
 
 function home(){
@@ -949,9 +1302,9 @@ function home(){
 
   h+='<div class="sec">Tests · newest first</div>'
     +testList(activeTests(), archived.length
-      ? "Every test is archived. Open the drawer below to bring one back."
-      : "No tests yet. Add a lesson using the documented JSON example.", true)
-    +archiveBlock();
+      ? "No active tests. Find completed or archived tests below."
+      : "No active tests. Ask ChatGPT for a new practice test.", true)
+    +completedBlock()+archiveBlock();
 
   if(weak.length) h+='<div class="sec">Weak spots</div><div class="stack">'+weak.map(([tg,v])=>
     '<div class="card"><div class="row"><div class="grow"><div class="ttl">'+esc(tg)+'</div>'
@@ -975,24 +1328,24 @@ function home(){
     : '<div class="empty">No completed attempts yet.</div>')+'</details>';
 
   const noted=noteRefs();
-  if(noted.length) h+='<div class="sec">Your notes · '+noted.length+'</div>'
+  if(noted.length) h+='<details id="your-notes" class="notes-fold"'+(notesExpanded?' open':'')+'><summary>Your notes · '+noted.length+'</summary>'
     +'<div class="card"><div class="row"><div class="meta grow">'
-    +'Written on a question while studying. Copy them for your own review.</div>'
+    +'Written on a question while studying. Copy them into chat and ChatGPT can act on them.</div>'
     +'<button class="btn" data-note-copy="1">Copy all</button></div>'
     +'<div class="stack">'+noted.map(({r,t,q,text})=>
       '<div><div class="meta"><b>'+esc(t.course)+' · Q'+(r[1]+1)+'</b> — '+esc(t.title)+'</div>'
-      +'<div class="meta" style="font-family:\'Georgia\',Georgia,serif">'+esc(q.q||q.title||"")+'</div>'
-      +'<div class="notetxt" style="margin-top:5px">'+esc(text)+'</div></div>').join("")+'</div></div>';
+      +'<div class="meta" style="font-family:\'Source Serif 4\',Georgia,serif">'+esc(q.q||q.title||"")+'</div>'
+      +'<div class="notetxt" style="margin-top:5px">'+esc(text)+'</div></div>').join("")+'</div></div></details>';
 
-  h+='<div class="sec">Save your study history</div>'
+  h+='<div class="sec">Hand off to ChatGPT</div>'
     +'<div class="card"><div class="row"><div class="meta grow">'
     +'Saves everything — notes, scores, review schedule, flags — as <b>drill-state.json</b>. '
-    +'Keep the saved file as a portable backup.</div>'
+    +'Open the saved file in ChatGPT to review your progress.</div>'
     +'<button class="btn" data-export-all="1">Save file</button></div>'
-    +'<div class="meta" style="margin-top:12px">Stored locally on this computer · <label class="btn" style="display:inline-block">Import backup<input type="file" accept="application/json,.json" data-import aria-label="Import backup" style="max-width:210px"></label></div></div>';
+    +'<div class="meta" style="margin-top:12px">Private on this Mac · <label class="btn" style="display:inline-flex;flex-wrap:wrap;gap:8px;max-width:100%">Import backup<input type="file" accept="application/json,.json" data-import aria-label="Import backup" style="max-width:210px"></label></div></div>';
 
   if(flags.length) h+='<div class="sec">Flagged</div><div class="empty">'+flags.length
-    +' card'+(flags.length>1?"s":"")+' flagged. Review their notes before revising lesson content.</div>';
+    +' card'+(flags.length>1?"s":"")+' flagged. Mention them in chat and ChatGPT will fix or retire them.</div>';
 
   el.innerHTML=h;
 }
@@ -1006,7 +1359,7 @@ function noteRefs(){
   });
   return out;
 }
-// Everything the app knows, in one file the authoring assistant can read off disk.
+// Everything the app knows, in one file Claude can read off disk.
 // The store is private to this page, so an export is the only way out of it.
 function exportState(){
   return {
@@ -1158,7 +1511,7 @@ function orderCard(a,q,r){
       }).join("")+'</ol>'
     +(picked.length<q.items.length
       ? '<div class="opts">'+order.filter(i=>!picked.includes(i)).map((i,n)=>
-          '<button class="opt" data-order="'+i+'"><span class="key">'+(n+1)+'</span>'
+          '<button class="opt" data-order="'+i+'"><span class="key">'+(order.indexOf(i)+1)+'</span>'
           +'<span>'+esc(q.items[i])+'</span></button>').join("")+'</div>'
       : '')
     +kbHint(a,q)
@@ -1179,7 +1532,7 @@ function noteBox(r,label){
   return '<div class="nb"><textarea data-note="'+esc(k)+'" placeholder="Anything about this card — '
     +'a wrong answer, confusing wording, something to remember, something to ask about.">'+esc(notes[k]||"")+'</textarea>'
     +'<div class="row" style="margin-top:6px">'
-    +'<div class="meta">Saved as you type. Read this from the Notes list on Today.</div>'
+    +'<div class="meta">Saved as you type. Claude can read this from the Notes list on Today.</div>'
     +'<button class="tiny pill" data-note-close="1">Done</button></div></div>';
 }
 // An explanation is a keeper line plus optional supporting detail, split on the first newline.
@@ -1288,11 +1641,12 @@ function results(){
   el.innerHTML='<button class="tiny" data-home="1">'+ICON.back+' Home</button>'
     +'<h1 style="font-size:25px;font-weight:800;letter-spacing:-.025em;margin:6px 0 0;text-wrap:balance">'+esc(a.title)+'</h1>'
     +(session?'<div class="meta">'+session.label+'</div>':'')
-    +(session?.complete?'<div class="card complete-banner" style="margin-top:14px"><b>'+ICON.check+' Complete</b><div class="meta">All '+asks(test(a.testId))+' questions correct'+(isArch(a.testId)?' · Saved in Archived':'')+'</div></div>':'')
+    +(session?.complete?'<div class="card complete-banner" style="margin-top:14px"><b>'+ICON.check+' Complete</b><div class="meta">All '+asks(test(a.testId))+' questions correct'+(isArch(a.testId)?' · Archived':' · Saved in Completed')+'</div></div>':'')
     +'<div class="score">'+ring(p)+'<div><b>'+sc+' / '+scorable(a)+'</b>'
     +'<div class="meta">'+p+'% · '+fmt(a.finishedAt||now())+' · '+dur(a.elapsed)
     +(a.mode==="exam"?' · exam mode':'')+'</div></div></div>'
     +(restartCount(a)?'<div class="card"><b>'+reviewSummary(a)+'</b><div class="meta">First-round score: '+sc+'/'+scorable(a)+'</div></div>':'')
+    +(a.mode==='practice'&&a.done?'<section class="card retry-invite" aria-labelledby="retry-title"><h2 id="retry-title">Try this test again?</h2><div class="meta">Start fresh and see what sticks. This attempt stays in your history.</div><div class="retry-actions"><button class="btn pri" data-full-retry="'+esc(a.id)+'">'+(a.testId?'Retry full test':'Retry practice set')+'</button><button class="btn" data-home="1">Done for now</button></div></section>':'')
     +'<details class="fold"><summary>'+(restartCount(a)?'First-round answers':'Every question')+'</summary><div class="stack">'
     + original.refs.map((r,i)=>{
         const q=qOf(r); if(!q||isNote(q)) return "";
@@ -1436,11 +1790,12 @@ function restartDock(a){
 function render(){
   clearInterval(tick);
   flushNote();                                       // the repaint below destroys the open note box
-  ({home,browse,detail,quiz,results}[view.s])();
+  ({home,browse,terms,detail,quiz,results}[view.s])();
   const d=el.querySelector(".dock");                 // fixed elements cannot live inside a transformed box
   dockHost.innerHTML="";
   if(d) dockHost.appendChild(d);
   el.className = navDir>0?"in-l":navDir<0?"in-r":"in-up";
+  syncWordBank();
   afterPaint();                                      // ring draw + count-ups, after the DOM exists
   void el.offsetWidth;                               // restart the animation on every paint
   navDir=0;
@@ -1458,6 +1813,15 @@ function render(){
 function handle(b){
   syncElapsed();
   const d=b.dataset;
+  if(d.termsCourse){termsCourse=d.termsCourse;return render();}
+  if(d.wordbank!=null)return toggleWordBank();
+  if(d.wordbankClose!=null)return closeWordBank();
+  if(d.fullRetry){
+    const a=rows().find(x=>x.id===d.fullRetry);if(!a?.done||a.mode!=='practice')return;
+    const t=test(a.testId), unfinished=rows().find(x=>!x.done&&(x.testId||x.title)===(a.testId||a.title));
+    if(unfinished){live=unfinished;view={s:'quiz'};askRestart=false;render();toast('Resumed your existing practice');return;}
+    askRestart=false;closeWordBank(false);return start(t?.title||a.title,t?refsOf(t):firstRound(a).refs.map(r=>r.slice()),'practice',t?.id);
+  }
   if(d.stackBack||d.stackForward){
     const t=test(d.stackBack||d.stackForward);if(!t)return;
     const sessions=testSessions(t), selected=selectedSession(t,sessions), i=sessions.indexOf(selected);
@@ -1544,7 +1908,7 @@ function handle(b){
   }
   if(d.order!=null){
     const a=live; if(a.checked[a.i]) return;
-    const cur=(a.answers[a.i]||[]).slice(); cur.push(+d.order);
+    const cur=(a.answers[a.i]||[]).slice(); if(cur.includes(+d.order))return; cur.push(+d.order);
     a.answers[a.i]=cur; render(); return saveLive();
   }
   if(d.unpick!=null){
@@ -1607,7 +1971,7 @@ function copyOut(text,btn){
   }
 }
 
-const SEL="[data-stack-back],[data-stack-forward],[data-retry],[data-home],[data-view],[data-test],[data-att],[data-resume],[data-review],[data-tag],"
+const SEL="[data-terms-course],[data-wordbank],[data-wordbank-close],[data-full-retry],[data-stack-back],[data-stack-forward],[data-retry],[data-home],[data-view],[data-test],[data-att],[data-resume],[data-review],[data-tag],"
   +"[data-practice],[data-exam],[data-pick],[data-check],[data-next],[data-flag],[data-exit],"
   +"[data-arch],[data-unarch],[data-arch-toggle],[data-match],[data-order],[data-unpick],"
   +"[data-back],[data-fwd],[data-jump],[data-restart-ask],[data-restart-do],[data-cancel],"
@@ -1649,9 +2013,9 @@ function kbPick(n){                                    // n is 1-based, as print
   }
   if(k==="order"){
     const picked=a.answers[a.i]||[];
-    const rest=shuffled(q.items.length,seedOf(r[0]+":"+r[1])).filter(i=>!picked.includes(i));
-    if(n>rest.length) return false;
-    handle({dataset:{order:String(rest[n-1])}}); return true;
+    const order=shuffled(q.items.length,seedOf(r[0]+":"+r[1]));
+    if(n<1||n>order.length||picked.includes(order[n-1])) return false;
+    handle({dataset:{order:String(order[n-1])}}); return true;
   }
   return false;
 }
@@ -1675,6 +2039,7 @@ function kbConfirm(){
 }
 document.addEventListener("keydown",e=>{
   if(view.s!=="quiz"||!live||e.metaKey||e.ctrlKey||e.altKey) return;
+  if(e.target?.closest?.("#wordbank")) return;
   if(e.target?.closest?.(".nb")) return;                // the note box owns the keyboard while it is open
   if(document.querySelector(".lb")) return;             // the enlarged figure owns the keyboard
   if(askRestart){                                       // the confirm owns it too
@@ -1761,7 +2126,7 @@ DrillRuntime.connect().then(async d=>{
     attempts=as.docs.map(clone).map(normalize).filter(Boolean);
     const ids=v=>(Array.isArray(v)?v:[]).filter(x=>typeof x==="string"&&x);
     if(fl.exists) flags=ids(clone(fl).list);
-    if(ar.exists){ archived=ids(clone(ar).list); completedRuns=ids(clone(ar).completedRuns); }
+    if(ar.exists){ archived=archiveIdsFor(clone(ar)); completedRuns=ids(clone(ar).completedRuns); }
     if(nt.exists){ const m=clone(nt).map;
       if(m&&typeof m==="object") for(const [k,v] of Object.entries(m))
         if(typeof v==="string"&&v.trim()) notes[k]=v; }

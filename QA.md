@@ -2,10 +2,11 @@
 
 Run `python3 -B qa/verify.py` from this folder.
 
-Automated checks verified on September 8, 2026:
+Automated checks verified on September 9, 2026:
 
 - 190 behavior assertions passed against the inline JavaScript in the shipped `drill.html`.
 - 20 review-loop and 32 completion/stack assertions passed, covering strict threshold boundaries, saved rounds, legacy review links, retake navigation, completion and restoration.
+- 16 word-bank/retry/ordering assertions and 18 course-library/completion/notes assertions passed.
 - 26 versioning assertions passed against that same script.
 - 11 Python storage/API tests passed with entirely synthetic data in temporary databases.
 - Content validation passed for the fictional library and the appended candidate. Its optional warnings flag a short correct answer and a tag used once; these are editorial heuristics, not schema failures.
@@ -20,3 +21,10 @@ BrowserClaw verification on September 8 used the updated public HTML and a separ
 The JavaScript suites use a synthetic DOM and complement that browser check. Physical-phone/Safari behavior, browser-level gestures, keyboard shortcuts and backup downloads were not verified in this edition. Previous app QA does not establish that the curated edition was independently tested on those devices.
 
 The privacy scan is a review aid, not proof against every possible sensitive value. The owner approved publication of this curated edition. No open-source license has been assigned; see PROVENANCE.md.
+
+
+## September 9 update
+
+Course-owned glossaries feed both the Terms library and practice word bank. Definitions expand into flow, comparison or equation examples. Completion now uses its own section; only explicit archive actions hide a test in Archived. Legacy completion markers separate earlier automatic archives; old manual archive intent for completed tests was not recorded separately. New archives use archiveVersion 2. Notes disclosure state is device-local; note text remains in saved study state. Ordering shortcuts and repeated full retries have focused regression checks.
+
+BrowserClaw on September 9 verified the local Terms view with five fictional entries, the expanded Crate flow and no desktop horizontal overflow. The current six JavaScript suites total 302 assertions. Existing image-attribute escaping is preserved and tested. The source lesson and image collection are unchanged from the prior public version.

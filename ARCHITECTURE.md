@@ -52,3 +52,8 @@ For an empty database, `GET /api/state` returns exactly `{"revision":0,"document
 The server binds only to `127.0.0.1`, checks Host/Origin/fetch-site headers, and requires JSON writes. It is a personal local demo, not an authenticated internet service. Do not expose it through a public tunnel or bind it to a network interface. Local backups are not encrypted. Other users or programs with filesystem access can read them.
 
 The original deployment adapter is deliberately outside this distribution: its owner-specific configuration and private seed are unnecessary for the local runnable app. Multiuser identity, remote hosting, cross-device synchronization, and automatic AI lesson generation are not provided. The retained local lesson helper is an authoring tool, not an LLM integration. Image source attributes are escaped at rendering and enlargement. The append helper accepts only complete base64 webp/png/jpeg/gif image data URLs with alt text. Content validation is heuristic and does not prove factual correctness or handle untrusted content safely.
+
+
+## September 9 update
+
+Course-owned glossaries feed both the Terms library and practice word bank. Definitions expand into flow, comparison or equation examples. Completion now uses its own section; only explicit archive actions hide a test in Archived. Legacy completion markers separate earlier automatic archives; old manual archive intent for completed tests was not recorded separately. New archives use archiveVersion 2. Notes disclosure state is device-local; note text remains in saved study state. Ordering shortcuts and repeated full retries have focused regression checks.
