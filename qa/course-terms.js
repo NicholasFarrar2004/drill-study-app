@@ -35,6 +35,8 @@ global.window={scrollTo:()=>{}};
 global.claude={use:()=>Promise.resolve(null)}; global.DrillRuntime={connect:()=>Promise.resolve(null),fail:()=>{}}; global.DrillRuntime={connect:()=>Promise.resolve(null),fail:()=>{}}; global.DrillRuntime={connect:()=>Promise.resolve(null),fail:()=>{}};
 
 const assert=require('node:assert/strict');
+// Keep legacy fixtures in fixed order; retakes.js tests the real shuffler.
+src+='\n;remixedPractice=(refs,previous)=>({refs:withLearningMaterials(refs),choiceOrders:{}});';
 const c=eval(src+'\n;({test,refsOf,start,finish,archiveIdsFor,testComplete,activeTests,archiveCompleted,courseKey,courseEntries,searchTerms,wordBankEntries,termEntry,termVisual,completedBlock,archiveBlock,render,handle,notes:()=>notes,attempts:()=>attempts,live:()=>live,setArchived:v=>{archived=v},archived:()=>archived,setView:v=>{view=v},notesExpanded:()=>notesExpanded})');
 let n=0;const check=(x,msg)=>{assert.ok(x,msg);n++;console.log('ok - '+msg);};
 c.start('T1',c.refsOf(c.test('t1')),'practice','t1');let a=c.live();a.answers=[1,[0,2],3];a.checked=[true,true,true];a.i=a.max=2;c.finish();

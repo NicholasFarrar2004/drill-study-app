@@ -37,6 +37,8 @@ global.document={getElementById:id=>id==="app"?stubEl:id==="dockhost"?dockStub:n
   body:{appendChild(){}}};
 global.window={scrollTo:()=>{}};
 global.claude={use:()=>Promise.resolve(null)}; global.DrillRuntime={connect:()=>Promise.resolve(null),fail:()=>{}}; global.DrillRuntime={connect:()=>Promise.resolve(null),fail:()=>{}}; global.DrillRuntime={connect:()=>Promise.resolve(null),fail:()=>{}};
+// Keep legacy fixtures in fixed order; retakes.js tests the real shuffler.
+src+='\n;remixedPractice=(refs,previous)=>({refs:withLearningMaterials(refs),choiceOrders:{}});';
 const ctx=eval(src+"\n;({attempts:()=>attempts,sched:()=>sched,view:()=>view,live:()=>live,scoreOf,right,qOf,dueRefs,archived:()=>archived,normalize,figure,setLive:v=>{live=v},notes:()=>notes,notesText,noteRefs,exportState})");
 
 const click=d=>L.click[0]({target:{closest:sel=>sel===".fig img"?null:{dataset:d}}});
