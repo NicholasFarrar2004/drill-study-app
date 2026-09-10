@@ -52,12 +52,12 @@ check(html.includes('1 question to review'),'review header counts questions only
 const firstOrder=c.choiceOrder(a,ref(1));c.handle({dataset:{next:'1'}});check(a.i===1,'Got it skips teaching without grading');
 c.kbPick(firstOrder.indexOf(0)+1);check(a.answers[a.i]===0&&a.checked[a.i],'number key follows shuffled MC order');c.handle({dataset:{next:'1'}});
 check(a.done&&c.missedRefs(a).length===0,'correct answer completes the round');
-const mixed=c.remixedPractice(all,a);check(mixed.refs.length===all.length,'full retake keeps all cards');
+const previous={refs:all,answers:[],checked:[]};
+const mixed=c.remixedPractice(all,previous);check(mixed.refs.length===all.length,'full retake keeps all cards');
 check(new Set(mixed.refs.map(JSON.stringify)).size===mixed.refs.length,'cards are not duplicated');
 check(JSON.stringify(mixed.refs)!==JSON.stringify(all),'retake changes topic order');
 check(mixed.refs.findIndex(r=>r[1]===1)<mixed.refs.findIndex(r=>r[1]===2),'contextual follow-ups stay in section order');
 for(const r of mixed.refs.filter(r=>lesson.questions[r[1]].q))for(const slide of c.learningRefsFor(r))check(mixed.refs.findIndex(x=>x[1]===slide[1])<mixed.refs.findIndex(x=>x[1]===r[1]),'teaching precedes question '+r[1]);
-const previous={refs:all,answers:[],checked:[]};
 for(const [i,sides]of [[1,['mc']],[2,['mc']],[4,['order']],[5,['l','r']]])for(const side of sides){
  const old=c.choiceOrder(previous,ref(i),side),next=c.choiceOrder(mixed,ref(i),side);
  check(next.every((v,j)=>v!==old[j]),'choices move for '+i+' '+side);
