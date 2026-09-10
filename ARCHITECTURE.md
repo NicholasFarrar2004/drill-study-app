@@ -57,3 +57,10 @@ The original deployment adapter is deliberately outside this distribution: its o
 ## September 9 update
 
 Course-owned glossaries feed both the Terms library and practice word bank. Definitions expand into flow, comparison or equation examples. Completion now uses its own section; only explicit archive actions hide a test in Archived. Legacy completion markers separate earlier automatic archives; old manual archive intent for completed tests was not recorded separately. New archives use archiveVersion 2. Notes disclosure state is device-local; note text remains in saved study state. Ordering shortcuts and repeated full retries have focused regression checks.
+
+
+## Teaching links and retake ordering
+
+`learningRefs` on a lesson maps zero-based question indexes to teaching-card indexes in the same lesson. Use explicit links for recap questions; otherwise the preceding teaching block supplies the material. Review rounds insert each required teaching card once and exclude it from scoring and scheduling.
+
+Retakes shuffle teaching sections while retaining question order within each section. Saved `choiceOrders` map question references to permutations of original option indexes. Rendering, number keys, and letter shortcuts use the same permutations. Grading and exports retain the original indexes, so moving an answer does not change its meaning. Prior rounds keep their permutations; resuming does not shuffle again. Legacy attempts without this metadata keep their original display order.

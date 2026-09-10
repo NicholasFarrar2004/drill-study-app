@@ -212,8 +212,20 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
   color:var(--accent);margin-bottom:8px}
 
 /* matching game */
-.matchgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.matchgrid .col{display:flex;flex-direction:column;gap:8px}
+.matchgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.matchgrid .col{display:grid;grid-auto-rows:1fr;gap:10px;min-width:0}
+.matchgrid .tile{display:grid;grid-template-columns:20px minmax(0,1fr);align-items:center;gap:9px;min-width:0;min-height:76px;padding:14px 12px;line-height:1.45}
+.matchgrid .key{margin:0;align-self:center;flex:none}
+.matchgrid .key-placeholder{visibility:hidden}
+.match-label{min-width:0;overflow-wrap:break-word}
+.match-math{font-family:'Source Serif 4',Georgia,serif;font-weight:400;font-size:17px;line-height:1.5}
+.match-math i{font-style:italic}
+.match-math sup{font-size:.7em;line-height:0}
+.match-frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;line-height:1.2;margin:0 .12em;white-space:nowrap}
+.match-frac>span:first-child{border-bottom:1px solid currentColor;padding:0 .18em .12em}
+.match-frac>span:last-child{padding:.12em .18em 0}
+.match-expression{display:inline-block;white-space:nowrap}
+@media(max-width:500px){.matchgrid{gap:8px}.matchgrid .col{gap:8px}.matchgrid .tile{grid-template-columns:16px minmax(0,1fr);gap:5px;padding:12px 8px;font-size:14px}.match-math{font-size:15px}}
 .tile{text-align:left;background:var(--surface);border:2px solid var(--line);border-bottom-width:4px;
   border-radius:11px;padding:11px 12px;font-size:14px;line-height:1.35;font-weight:600;
   transition:transform .06s,border-bottom-width .06s,opacity .2s}
@@ -762,6 +774,58 @@ const roundScoreOf=a=>a.refs.reduce((n,r,i)=>{const q=qOf(r);
 const firstRound=a=>a.rounds?.[0]||a;
 const scorable=a=>roundScorable(firstRound(a));
 const scoreOf=a=>roundScoreOf(firstRound(a));
+// Reviewed exceptions for recap questions spanning earlier teaching sections.
+// New lessons may declare learningRefs: {questionIndex: [teachingCardIndexes]}.
+const TEST_LEARNING_REFS={};
+function learningRefsFor(r){
+  const t=test(r[0]), q=qOf(r);if(!t||!q||isNote(q))return [];
+  const explicit=t.learningRefs?.[r[1]]??TEST_LEARNING_REFS[t.id]?.[r[1]];
+  if(Array.isArray(explicit))return [...new Set(explicit)]
+    .filter(i=>Number.isInteger(i)&&isNote(t.questions[i])).sort((a,b)=>a-b).map(i=>[t.id,i]);
+  // A teaching block introduces the scored questions up to the next block.
+  let i=r[1]-1;while(i>=0&&!isNote(t.questions[i]))i--;
+  const refs=[];while(i>=0&&isNote(t.questions[i]))refs.unshift([t.id,i--]);
+  return refs;
+}
+function withLearningMaterials(refs){
+  const out=[],seen=new Set();
+  const add=r=>{const k=JSON.stringify(r);if(qOf(r)&&!seen.has(k)){seen.add(k);out.push(r.slice());}};
+  for(const r of refs){if(!isNote(qOf(r)))learningRefsFor(r).forEach(add);add(r);}
+  return out;
+}
+// Saved display permutations keep answers tied to their original content indexes.
+function choiceOrder(a,r,side='mc'){
+  const q=qOf(r),n=side==='mc'?q.options.length:side==='order'?q.items.length:q.pairs.length;
+  const saved=a.choiceOrders?.[JSON.stringify(r)]?.[side];
+  if(Array.isArray(saved)&&saved.length===n&&new Set(saved).size===n&&saved.every(i=>Number.isInteger(i)&&i>=0&&i<n))return saved;
+  const seed=seedOf(r[0]+':'+r[1]);
+  return side==='mc'?Array.from({length:n},(_,i)=>i):shuffled(n,side==='r'?seed*7+13:seed);
+}
+function reshuffle(previous){
+  if(previous.length<2)return previous.slice();
+  for(let tries=0;tries<20;tries++){
+    const next=shuffled(previous.length,1+Math.floor(Math.random()*0x7ffffffe)).map(i=>previous[i]);
+    if(next.every((v,i)=>v!==previous[i]))return next;
+  }
+  return previous.slice(1).concat(previous[0]);
+}
+function remixedPractice(refs,previous){
+  const questions=refs.filter(r=>qOf(r)&&!isNote(qOf(r))),groups=new Map();
+  // Keep contextual follow-ups in their teaching section; shuffle the sections.
+  for(const r of questions){const t=test(r[0]);let i=r[1]-1;while(i>=0&&!isNote(t.questions[i]))i--;
+    const k=JSON.stringify([r[0],i<0?r[1]:i]);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(r);}
+  if(!questions.length)return {refs:refs.map(r=>r.slice()),choiceOrders:{}};
+  const prior=questions.length>roundScorable(previous)?firstRound(previous).refs:previous.refs;
+  const rank=new Map(prior.map((r,i)=>[JSON.stringify(r),i]));
+  const blockRank=block=>Math.min(...block.map(r=>rank.get(JSON.stringify(r))??Infinity));
+  const blocks=[...groups.values()].sort((a,b)=>blockRank(a)-blockRank(b));
+  const ordered=reshuffle(blocks).flat();
+  const source={choiceOrders:{...firstRound(previous).choiceOrders,...previous.choiceOrders}};
+  const choiceOrders={};
+  for(const r of questions){const q=qOf(r),k=kind(q),sides=k==='mc'?['mc']:k==='match'?['l','r']:['order'];
+    choiceOrders[JSON.stringify(r)]=Object.fromEntries(sides.map(side=>[side,reshuffle(choiceOrder(source,r,side))]));}
+  return {refs:withLearningMaterials(ordered),choiceOrders};
+}
 const missedRefs=a=>a.refs.filter((r,i)=>{const q=qOf(r);return q&&!isNote(q)&&!right(q,a.answers[i]);});
 const originalTotal=a=>a.originalTotal||[...new Set(firstRound(a).refs.map(r=>r[0]))]
   .reduce((n,id)=>n+(test(id)?asks(test(id)):0),0)||roundScorable(firstRound(a));
@@ -773,13 +837,14 @@ const reviewSummary=a=>restartCount(a)
 const shortReview=a=>!a.testId&&!restartCount(a)&&roundScorable(a)>0&&roundScorable(a)*5<originalTotal(a);
 function continueReview(a){
   const session=a.done?sessionFor(a):null;
-  const refs=session?session.pending:missedRefs(a);
+  const pending=session?session.pending:missedRefs(a);
+  const mixed=remixedPractice(pending,a),refs=mixed.refs;
   if(a.mode!=="practice"||!refs.length)return;
   if(session?.linked.length)a.priorReviewIds=session.linked.map(v=>v.id);
-  const round={refs:a.refs,answers:a.answers,checked:a.checked,finishedAt:a.finishedAt||now()};
+  const round={refs:a.refs,answers:a.answers,checked:a.checked,choiceOrders:a.choiceOrders,finishedAt:a.finishedAt||now()};
   a.originalTotal=originalTotal(a);
   a.rounds=[...(a.rounds||[]),round];
-  a.refs=refs; a.answers=refs.map(()=>null); a.checked=refs.map(()=>false);
+  a.refs=refs; a.choiceOrders=mixed.choiceOrders; a.answers=refs.map(()=>null); a.checked=refs.map(()=>false);
   a.i=0; a.max=0; a.done=false; delete a.finishedAt;
   live=a; askRestart=false; view={s:"quiz"}; saveLive(); render();
 }
@@ -953,8 +1018,13 @@ function normalize(a){
 }
 
 // ── starting attempts ──────────────────────────────────────────────────────────
-function start(title,refs,mode,testId){
+function start(title,refs,mode,testId,retryOf=null){
   if(!refs.length) return;
+  const previous=retryOf||(testId?rows().find(a=>a.done&&a.testId===testId):null);
+  const mixed=mode==='practice'&&previous?remixedPractice(refs,previous):null;
+  if(mixed)refs=mixed.refs;
+  // Full lessons already contain their slides. Enrich question-only practice sets.
+  if(mode==='practice'&&!refs.some(r=>isNote(qOf(r))))refs=withLearningMaterials(refs);
   const stale=rows().find(a=>!a.done&&(a.testId||a.title)===(testId||title));
   if(stale){ if(restartCount(stale)){ stale.done=true; stale.finishedAt=now(); put("attempts/"+stale.id,stale); }
     else { attempts.splice(attempts.indexOf(stale),1); del("attempts/"+stale.id); } }
@@ -962,7 +1032,7 @@ function start(title,refs,mode,testId){
   let id=(testId||"mix")+"-"+now();while(rows().some(a=>a.id===id))id+='-1';
   live={id, testId:testId||null, title, mode, refs,
         answers:refs.map(()=>null), checked:refs.map(()=>false), i:0, max:0, done:false,
-        startedAt:now(), elapsed:0};
+        startedAt:now(), elapsed:0, ...(mixed?{choiceOrders:mixed.choiceOrders}:{})};
   if(testId)delete stackPositions[testId];
   attempts.unshift(live);
   view={s:"quiz"}; render(); saveLive();
@@ -1449,7 +1519,7 @@ function quizChrome(a,stuck){
     +(a.i<(a.max||0)?'<button class="tiny" data-jump="1">Latest</button>':'')
     +(stuck?'<button class="tiny" data-next="1">Skip</button>':'')
     +'<button class="tiny" data-restart-ask="1">'+ICON.redo+' Restart</button>'
-    +'</div></div>'+(restartCount(a)?'<div class="meta" role="status">Restart '+restartCount(a)+' · '+a.refs.length+' question'+(a.refs.length===1?'':'s')+' to review</div>':'');
+    +'</div></div>'+(restartCount(a)?'<div class="meta" role="status">Restart '+restartCount(a)+' · '+roundScorable(a)+' question'+(roundScorable(a)===1?'':'s')+' to review</div>':'');
 }
 
 function noteCard(a,q,r){
@@ -1474,17 +1544,31 @@ function prompt_(a,q,extra,stuck){
 }
 
 // ── matching: tap a term, then its partner ─────────────────────────────────────
+// Exact display labels preserve stored question text and answer identities.
+function matchLabel(label){
+  const frac=(top,bottom)=>'<span class="match-frac"><span>'+top+'</span><span>'+bottom+'</span></span>';
+  const discount=frac('<i>F</i>','(1 + <i>r</i>)<sup><i>T</i></sup>');
+  const formulas={
+    'F/(1+r)^T':discount,
+    'C/r':frac('<i>C</i>','<i>r</i>'),
+    '(C/r)[1−1/(1+r)^T]':frac('<i>C</i>','<i>r</i>')+'<span class="match-expression">[1 − '+frac('1','(1 + <i>r</i>)<sup><i>T</i></sup>')+']</span>',
+    'PV of annuity + F/(1+r)^T':'PV of annuity + '+discount
+  };
+  return Object.prototype.hasOwnProperty.call(formulas,label)
+    ? '<span class="match-label match-math" aria-label="'+esc(label)+'">'+formulas[label]+'</span>'
+    : '<span class="match-label">'+esc(label.replace(/ (T|F|1)$/, '\u00a0$1'))+'</span>';
+}
 function matchCard(a,q,r){
   const st=a.answers[a.i]||{pairs:[],misses:0,sel:null,done:false};
   const seed=seedOf(r[0]+":"+r[1]);
-  const L=shuffled(q.pairs.length,seed), R=shuffled(q.pairs.length,seed*7+13);
+  const L=choiceOrder(a,r,'l'), R=choiceOrder(a,r,'r');
   const numbered=col=>{ let n=0; return col.map(i=>[i, st.pairs.includes(i)?0:++n]); };
   const tile=(side,orig,label,num)=>{
     const matched=st.pairs.includes(orig);
     const on=st.sel&&st.sel.side===side&&st.sel.orig===orig;
     return '<button class="tile'+(matched?" matched":"")+(on?" on":"")+(st.miss===orig?" miss":"")+'"'
       +(matched?" disabled":"")+' data-match="'+side+":"+orig+'">'
-      +(num?'<span class="key sm">'+num+'</span>':'')+esc(label)+'</button>';
+      +'<span class="key sm'+(num?'':' key-placeholder')+'" aria-hidden="true">'+(num||'')+'</span>'+matchLabel(label)+'</button>';
   };
   el.innerHTML=prompt_(a,q,"Tap a term, then its partner — or press the numbers.",!st.done)
     +'<div class="matchgrid">'
@@ -1501,7 +1585,7 @@ function matchCard(a,q,r){
 // ── ordering: tap the steps into sequence ──────────────────────────────────────
 function orderCard(a,q,r){
   const picked=a.answers[a.i]||[], shown=a.mode==="practice"&&a.checked[a.i];
-  const order=shuffled(q.items.length,seedOf(r[0]+":"+r[1]));
+  const order=choiceOrder(a,r,'order');
   const done=picked.length===q.items.length;
   el.innerHTML=prompt_(a,q,"Tap them in order, or press the numbers. Tap a chosen one to take it back.",!(shown||done))
     +'<ol class="chosen">'+picked.map((oi,n)=>{
@@ -1602,12 +1686,12 @@ function quiz(){
     +'<h2 class="stem">'+esc(q.q)+'</h2>'
     +figure(q)
     +(isMulti(q)?'<div class="hint">Select every answer that applies.</div>':'')
-    +'<div class="opts">'+q.options.map((o,i)=>{
+    +'<div class="opts">'+choiceOrder(a,r).map((i,position)=>{const o=q.options[i];
         let c="opt";
         if(shown) c+= (isMulti(q)?q.correct.includes(i):i===q.correct) ? " good" : (sel(i)?" bad":"");
         else if(sel(i)) c+=" sel";
         return '<button class="'+c+'" data-pick="'+i+'"'+(shown?" disabled":"")+'>'
-          +'<span class="key">'+(i+1)+'</span><span>'+esc(o)+'</span></button>';
+          +'<span class="key">'+(position+1)+'</span><span>'+esc(o)+'</span></button>';
       }).join("")+'</div>'
     +kbHint(a,q)
     +footRow(r,14)
@@ -1820,7 +1904,7 @@ function handle(b){
     const a=rows().find(x=>x.id===d.fullRetry);if(!a?.done||a.mode!=='practice')return;
     const t=test(a.testId), unfinished=rows().find(x=>!x.done&&(x.testId||x.title)===(a.testId||a.title));
     if(unfinished){live=unfinished;view={s:'quiz'};askRestart=false;render();toast('Resumed your existing practice');return;}
-    askRestart=false;closeWordBank(false);return start(t?.title||a.title,t?refsOf(t):firstRound(a).refs.map(r=>r.slice()),'practice',t?.id);
+    askRestart=false;closeWordBank(false);return start(t?.title||a.title,t?refsOf(t):firstRound(a).refs.map(r=>r.slice()),'practice',t?.id,a);
   }
   if(d.stackBack||d.stackForward){
     const t=test(d.stackBack||d.stackForward);if(!t)return;
@@ -1876,6 +1960,7 @@ function handle(b){
   if(d.cancel!=null){ askRestart=false; return render(); }
   if(d.restartDo!=null){
     const a=live;
+    if(a.mode==='practice'){const mixed=remixedPractice(a.refs,a);a.refs=mixed.refs;a.choiceOrders=mixed.choiceOrders;}
     a.answers=a.refs.map(()=>null); a.checked=a.refs.map(()=>false);
     a.i=0; a.max=0; if(!restartCount(a)){ a.elapsed=0; a.startedAt=now(); }
     askRestart=false; render(); return saveLive();
@@ -2000,20 +2085,20 @@ function kbPick(n){                                    // n is 1-based, as print
   const a=live, r=a.refs[a.i], q=qOf(r), k=kind(q);
   if(k==="mc"){
     if(n>q.options.length) return false;
-    handle({dataset:{pick:String(n-1)}}); return true;
+    handle({dataset:{pick:String(choiceOrder(a,r)[n-1])}}); return true;
   }
   if(k==="match"){
     const st=a.answers[a.i]||{pairs:[],sel:null};
     const seed=seedOf(r[0]+":"+r[1]);
     const side=st.sel?"r":"l";
-    const col=shuffled(q.pairs.length, side==="l"?seed:seed*7+13)
+    const col=choiceOrder(a,r,side)
       .filter(i=>!st.pairs.includes(i));             // only what is still on screen
     if(n>col.length) return false;
     handle({dataset:{match:side+":"+col[n-1]}}); return true;
   }
   if(k==="order"){
     const picked=a.answers[a.i]||[];
-    const order=shuffled(q.items.length,seedOf(r[0]+":"+r[1]));
+    const order=choiceOrder(a,r,'order');
     if(n<1||n>order.length||picked.includes(order[n-1])) return false;
     handle({dataset:{order:String(order[n-1])}}); return true;
   }
@@ -2064,7 +2149,7 @@ document.addEventListener("keydown",e=>{
     return;
   }
   const i=LETTERS.indexOf(e.key.toUpperCase());         // A-F still works
-  if(i>=0&&kind(q)==="mc"&&i<q.options.length){ e.preventDefault(); handle({dataset:{pick:String(i)}}); }
+  if(i>=0&&kind(q)==="mc"&&i<q.options.length){ e.preventDefault(); handle({dataset:{pick:String(choiceOrder(live,live.refs[live.i])[i])}}); }
 });
 
 // swiping moves through cards you have already seen, never past the frontier

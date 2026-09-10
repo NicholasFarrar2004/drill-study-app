@@ -27,4 +27,11 @@ The privacy scan is a review aid, not proof against every possible sensitive val
 
 Course-owned glossaries feed both the Terms library and practice word bank. Definitions expand into flow, comparison or equation examples. Completion now uses its own section; only explicit archive actions hide a test in Archived. Legacy completion markers separate earlier automatic archives; old manual archive intent for completed tests was not recorded separately. New archives use archiveVersion 2. Notes disclosure state is device-local; note text remains in saved study state. Ordering shortcuts and repeated full retries have focused regression checks.
 
-BrowserClaw on September 9 verified the local Terms view with five fictional entries, the expanded Crate flow and no desktop horizontal overflow. The current six JavaScript suites total 302 assertions. Existing image-attribute escaping is preserved and tested. The source lesson and image collection are unchanged from the prior public version.
+BrowserClaw on September 9 verified the local Terms view with five fictional entries, the expanded Crate flow and no desktop horizontal overflow. The September 9 six JavaScript suites totaled 302 assertions. Existing image-attribute escaping is preserved and tested. The source lesson and image collection are unchanged from the prior public version.
+
+
+## September 10 update
+
+The seven JavaScript suites now pass 347 assertions, followed by 11 storage/API tests and the append, image-validation, and empty-distribution checks. The 45 new retake checks exercise real shuffling, teaching links, shared-material deduplication, original scores, saved order, keyboard selection, matching, ordering, and malformed-permutation fallback. Older suites use fixed-order fixture isolation for the randomizer; they test the surrounding behavior rather than randomness.
+
+Matching cards use separate number and label columns, equal-height rows, and safe exact-label math formatting. The included lesson, figures, and empty initial study state are unchanged. Private course mappings and learner records are not included. Physical-device and Safari limitations from the earlier checks still apply.

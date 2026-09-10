@@ -24,6 +24,10 @@ When a practice round ends with fewer than 20% of the original scored questions 
 
 A full retake adds a labeled layer above the original test card. Only one attempt face is visible at a time. Completed tests turn green and appear in Completed. Archive is a separate, explicit action. Starting a full retake brings the test back into practice. Answer details and review rounds expand when needed.
 
+Retakes include the teaching slides relevant to the questions being reviewed. Shared material appears once per round, and the back arrow lets you revisit it. Slides do not count toward your score.
+
+Each retake shuffles topic groups and answer choices. Related follow-up questions stay together so their context still makes sense. Multiple-choice options, matching tiles, and ordering items change positions, while saved answers remain tied to their content. Leaving and resuming a retake keeps its current order. Matching cards also have aligned number columns, consistent heights, and readable fraction and exponent formatting for supported formulas.
+
 The four-question demo uses manual review for a single miss because 1/4 is 25%. The regression suite covers automatic repeats with larger fictional tests.
 
 ### One stack per test
